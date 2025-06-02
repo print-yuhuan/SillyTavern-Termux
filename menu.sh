@@ -510,7 +510,7 @@ about_script_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 关于脚本 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${YELLOW}${BOLD}1. 作者信息${NC}"
+        echo -e "${GREEN}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
         echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
