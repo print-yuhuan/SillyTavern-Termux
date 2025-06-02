@@ -142,7 +142,7 @@ plugin_install_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${MAGENTA}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
         echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化记忆）${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
@@ -234,7 +234,7 @@ plugin_uninstall_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 插件卸载 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         if [ ! -d "$PLUGIN_ROOT" ]; then
             echo -e "${YELLOW}${BOLD}>> 插件目录不存在，无插件可卸载。${NC}"
             press_any_key; break
@@ -275,7 +275,7 @@ plugin_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 酒馆插件 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${MAGENTA}${BOLD}1. 安装插件${NC}"
         echo -e "${BLUE}${BOLD}2. 卸载插件${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
@@ -366,7 +366,7 @@ maintenance_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 系统维护 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${BLUE}${BOLD}1. 查看依赖版本${NC}"
         echo -e "${GREEN}${BOLD}2. 修复依赖环境${NC}"
         echo -e "${YELLOW}${BOLD}3. 导出酒馆数据${NC}"
@@ -485,7 +485,7 @@ script_manage_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 脚本管理 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${BLUE}${BOLD}1. 菜单脚本更新${NC}"
         echo -e "${GREEN}${BOLD}2. 查看更新日志${NC}"
         echo -e "${RED}${BOLD}3. 一键卸载酒馆${NC}"
@@ -509,7 +509,7 @@ about_script_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 关于脚本 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${CYAN}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${YELLOW}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
         echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
