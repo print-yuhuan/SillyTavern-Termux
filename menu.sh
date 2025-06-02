@@ -443,7 +443,7 @@ about_script_menu() {
             1)
                 echo -e "\n${GREEN}${BOLD}==== 作者信息 ====${NC}"
                 echo -e "${GREEN}${BOLD}作者：欤歡${NC}"
-                echo -e "${GREEN}${BOLD}Q群：776072339${NC}"
+                echo -e "${GREEN}${BOLD}Q群：1026387403${NC}"
                 echo -e "${GREEN}${BOLD}邮箱：print.yuhuan@gmail.com${NC}"
                 echo -e "${CYAN}${BOLD}==================${NC}"
                 press_any_key
@@ -451,10 +451,10 @@ about_script_menu() {
             2)
                 echo -e "\n${BLUE}${BOLD}==== 加群交流 ====${NC}"
                 echo -e "${GREEN}${BOLD}欢迎加入 SillyTavern-Termux 用户交流群！${NC}"
-                echo -e "${GREEN}${BOLD}QQ群号：776072339${NC}"
+                echo -e "${GREEN}${BOLD}QQ群号：1026387403${NC}"
                 # 自动调起 QQ 加群
                 if command -v am >/dev/null 2>&1; then
-                    am start -a android.intent.action.VIEW -d "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=776072339&card_type=group&source=qrcode" >/dev/null 2>&1 \
+                    am start -a android.intent.action.VIEW -d "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=1026387403&card_type=group&source=qrcode" >/dev/null 2>&1 \
                         && echo -e "${GREEN}${BOLD}>> 已尝试自动打开 QQ 加群页面。${NC}" \
                         || echo -e "${YELLOW}${BOLD}>> 未能自动打开 QQ，请手动搜索群号加入。${NC}"
                 else

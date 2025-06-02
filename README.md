@@ -1,18 +1,16 @@
 # SillyTavern-Termux
 
-> 更适合中国宝宝体质的安卓 SillyTavern 一键部署与管理工具
+> 安卓 SillyTavern 一键部署与管理工具
 
 ---
 
 ## 项目简介
 
-**SillyTavern-Termux** 是一套专为中国用户定制的安卓端 SillyTavern 一键部署与管理脚本，基于 Termux 环境开发，集成了自动换源、依赖检测与修复、主程序与插件管理、终端美化、VPN检测等多项实用功能，帮助你在安卓设备上轻松、高效、安全地体验 SillyTavern。
+**SillyTavern-Termux** 是一套专为安卓端 SillyTavern 一键部署与管理脚本，基于 Termux 环境开发，集成了自动换源、依赖检测与修复、主程序与插件管理、终端美化等多项实用功能，帮助你在安卓设备上轻松、高效、安全地体验 SillyTavern。
 
 ---
 
 ## 一键部署命令
-
-请务必在关闭所有网络代理（如VPN、加速器）后运行，否则可能导致 Git 克隆失败！
 
 ```bash
 curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh && bash Install.sh
@@ -34,7 +32,6 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - **一键自动部署**：全流程自动化，无需手动配置
 - **清华镜像加速**：自动切换 Termux 源，下载速度飞快
 - **依赖智能检测与修复**：自动检测 Node.js、Git、curl 等依赖，缺啥补啥
-- **出口IP归属地检测**：自动判断是否开启VPN，确保适配国内网络环境
 - **终端字体美化**：自动下载并配置更适合代码显示的字体
 - **主程序与插件一站式管理**：支持 SillyTavern 主程序与第三方插件的安装、升级、卸载
 - **菜单式交互**：操作简单，功能一目了然，支持自动启动
@@ -60,7 +57,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 ### 3. 按照脚本提示进行操作
 
-- **自动换源、依赖安装、IP检测、字体美化、主程序与插件管理** 全自动完成
+- **自动换源、依赖安装、字体美化、主程序与插件管理** 全自动完成
 - 安装完成后，重启 Termux 即可自动进入主菜单
 
 ### 4. 菜单主要功能
@@ -79,7 +76,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 A1：Play 商店版部分功能被阉割，可能导致脚本无法正常运行，强烈推荐 GitHub 或 F-Droid 版本。
 
 **Q2：脚本执行报错怎么办？**  
-A2：请确保 Termux 已为推荐版本，且关闭所有 VPN/代理，保持网络畅通。如有问题欢迎加群或邮件反馈。
+A2：请确保 Termux 已为推荐版本，保持网络畅通，如有问题欢迎加群或邮件反馈。
 
 **Q3：支持哪些安卓版本？**  
 A3：理论上支持 Android 7.0 及以上，具体以实际测试为准。
@@ -96,7 +93,7 @@ A5：详见下方“联系方式”部分。
 
 - **作者：欤歡**
 - **邮箱：print.yuhuan@gmail.com**
-- **QQ群：776072339**
+- **QQ群：1026387403**
 - **项目主页**：[https://github.com/print-yuhuan/SillyTavern-Termux](https://github.com/print-yuhuan/SillyTavern-Termux)
 
 ---
