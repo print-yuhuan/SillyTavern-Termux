@@ -68,7 +68,7 @@ echo -e "\n${GREEN}${BOLD}==== 步骤 4/8：下载并配置终端字体 ====${NC
 FONT_DIR="$HOME/.termux"
 FONT_PATH="$FONT_DIR/font.ttf"
 mkdir -p "$FONT_DIR"
-if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono-NF-CN-Regular.ttf"; then
+if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
     echo -e "${CYAN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
     if command -v termux-reload-settings >/dev/null 2>&1; then
         termux-reload-settings \
