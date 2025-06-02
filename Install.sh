@@ -1,19 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # =========================================================================
-# SillyTavern-Termux 安装脚本
+# SillyTavern-Termux 安装脚本（Github）
 # =========================================================================
 
 # ==== 彩色输出定义 ====
-RED='\033[1;31m'      # 错误、失败、退出、卸载
-GREEN='\033[1;32m'    # 成功、完成、主要正向操作
-YELLOW='\033[1;33m'   # 警告、跳过、注意、输入提示
-BLUE='\033[1;34m'     # 次要操作、结构区分
-MAGENTA='\033[1;35m'  # 特殊操作、插件管理
-CYAN='\033[1;36m'     # 进度、中性提示、主菜单标题、分隔
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+MAGENTA='\033[1;35m'
+CYAN='\033[1;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# ==== 版本号（供 menu.sh 校验） ====
+# ==== 版本号 ====
 INSTALL_VERSION=20250522
 
 # =========================================================================
@@ -24,7 +24,17 @@ if [ ! -d "/data/data/com.termux/files/usr" ]; then
     echo -e "${RED}${BOLD}>> 本脚本仅适用于 Termux 环境，请在 Termux 中运行！${NC}"
     exit 1
 fi
-echo -e "${CYAN}${BOLD}>> 步骤 1/8 完成：Termux 环境检测通过。${NC}"
+
+if ! command -v termux-setup-storage >/dev/null 2>&1; then
+    echo -e "${YELLOW}${BOLD}>> 未检测到 termux-setup-storage，部分功能可能无法访问存储。${NC}"
+else
+    if [ ! -d "/storage/emulated/0" ]; then
+        echo -e "${CYAN}${BOLD}>> 正在请求存储权限...${NC}"
+        termux-setup-storage
+        sleep 2
+    fi
+fi
+echo -e "${CYAN}${BOLD}>> 步骤 1/8 完成：环境检测通过。${NC}"
 
 # =========================================================================
 # 步骤 2/8：更新包管理器
@@ -37,7 +47,7 @@ echo -e "${CYAN}${BOLD}>> 步骤 2/8 完成：包管理器已更新。${NC}"
 # 步骤 3/8：安装依赖
 # =========================================================================
 echo -e "\n${GREEN}${BOLD}==== 步骤 3/8：安装依赖 ====${NC}"
-for dep in git curl; do
+for dep in git curl zip; do
     if ! command -v $dep >/dev/null 2>&1; then
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
         pkg install -y $dep
@@ -68,8 +78,18 @@ echo -e "\n${GREEN}${BOLD}==== 步骤 4/8：下载并配置终端字体 ====${NC
 FONT_DIR="$HOME/.termux"
 FONT_PATH="$FONT_DIR/font.ttf"
 mkdir -p "$FONT_DIR"
-if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
-    echo -e "${CYAN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
+if [ -f "$FONT_PATH" ]; then
+    echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
+else
+    if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
+        echo -e "${CYAN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
+    else
+        echo -e "${RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 步骤 4/8 跳过：字体未配置成功。${NC}"
+    fi
+fi
+
+if [ -f "$FONT_PATH" ]; then
     if command -v termux-reload-settings >/dev/null 2>&1; then
         termux-reload-settings \
         && echo -e "${GREEN}${BOLD}>> 配置已自动刷新，字体已生效。${NC}" \
@@ -78,36 +98,50 @@ if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termu
         echo -e "${YELLOW}${BOLD}>> 未检测到 termux-reload-settings，请手动重启 Termux 使字体生效。${NC}"
     fi
     echo -e "${CYAN}${BOLD}>> 步骤 4/8 完成：终端字体已配置。${NC}"
-else
-    echo -e "${RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
-    echo -e "${YELLOW}${BOLD}>> 步骤 4/8 跳过：字体未配置成功。${NC}"
 fi
 
 # =========================================================================
 # 步骤 5/8：克隆 SillyTavern 主仓库
 # =========================================================================
 echo -e "\n${GREEN}${BOLD}==== 步骤 5/8：克隆 SillyTavern 仓库 ====${NC}"
-if [ ! -d "$HOME/SillyTavern/.git" ]; then
-    rm -rf "$HOME/SillyTavern"
-    git clone https://github.com/SillyTavern/SillyTavern "$HOME/SillyTavern" \
-        && echo -e "${CYAN}${BOLD}>> 步骤 5/8 完成：SillyTavern 仓库已克隆。${NC}" \
-        || { echo -e "${RED}${BOLD}>> 仓库克隆失败，请检查网络连接。${NC}"; exit 1; }
-else
-    echo -e "${YELLOW}${BOLD}>> SillyTavern 已存在，跳过克隆步骤。${NC}"
+if [ -d "$HOME/SillyTavern/.git" ]; then
+    echo -e "${YELLOW}${BOLD}>> SillyTavern 仓库已存在，跳过克隆。${NC}"
     echo -e "${CYAN}${BOLD}>> 步骤 5/8 跳过：仓库已存在。${NC}"
+else
+    rm -rf "$HOME/SillyTavern"
+    if git clone https://github.com/SillyTavern/SillyTavern "$HOME/SillyTavern"; then
+        echo -e "${CYAN}${BOLD}>> 步骤 5/8 完成：SillyTavern 仓库已克隆。${NC}"
+    else
+        echo -e "${RED}${BOLD}>> 仓库克隆失败，请检查网络连接。${NC}"
+        exit 1
+    fi
 fi
 
 # =========================================================================
 # 步骤 6/8：下载菜单脚本与配置文件
 # =========================================================================
 echo -e "\n${GREEN}${BOLD}==== 步骤 6/8：下载菜单脚本与配置文件 ====${NC}"
-curl -fsSL -o "$HOME/menu.sh" https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/menu.sh \
-    && chmod +x "$HOME/menu.sh" \
+MENU_PATH="$HOME/menu.sh"
+ENV_PATH="$HOME/.env"
+MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/menu.sh"
+ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
+
+if [ -f "$MENU_PATH" ]; then
+    echo -e "${YELLOW}${BOLD}>> menu.sh 已存在，跳过下载。${NC}"
+else
+    curl -fsSL -o "$MENU_PATH" "$MENU_URL" && chmod +x "$MENU_PATH" \
     || { echo -e "${RED}${BOLD}>> menu.sh 下载失败！${NC}"; exit 1; }
-curl -fsSL -o "$HOME/.env" https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env \
+fi
+
+if [ -f "$ENV_PATH" ]; then
+    echo -e "${YELLOW}${BOLD}>> .env 已存在，跳过下载。${NC}"
+else
+    curl -fsSL -o "$ENV_PATH" "$ENV_URL" \
     || { echo -e "${RED}${BOLD}>> .env 下载失败！${NC}"; exit 1; }
-source "$HOME/.env"
-echo -e "${CYAN}${BOLD}>> 步骤 6/8 完成：菜单脚本与配置文件已下载。${NC}"
+fi
+
+source "$ENV_PATH"
+echo -e "${CYAN}${BOLD}>> 步骤 6/8 完成：菜单脚本与配置文件已就绪。${NC}"
 
 # =========================================================================
 # 步骤 7/8：配置自动启动菜单

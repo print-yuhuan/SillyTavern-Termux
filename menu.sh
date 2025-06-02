@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # =========================================================================
-# SillyTavern-Termux 菜单主脚本
+# SillyTavern-Termux 菜单主脚本（Github国际版）
 # =========================================================================
 
 # ==== 彩色输出定义 ====
-RED='\033[1;31m'      # 错误、失败、退出、卸载
-GREEN='\033[1;32m'    # 成功、完成、主要正向操作
-YELLOW='\033[1;33m'   # 警告、跳过、注意、输入提示
-BLUE='\033[1;34m'     # 次要操作、结构区分
-MAGENTA='\033[1;35m'  # 特殊操作、插件管理
-CYAN='\033[1;36m'     # 进度、中性提示、主菜单标题、分隔
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+MAGENTA='\033[1;35m'
+CYAN='\033[1;36m'
+WHITE='\033[1;37m'
 BOLD='\033[1m'
 NC='\033[0m'
 
@@ -35,24 +36,19 @@ REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termu
 REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
 REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/menu.sh"
 
-# ==== 版本号读取函数 ====
+# ==== 通用函数 ====
 get_version() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2 | tr -d '\r'; }
-
-# ==== 菜单高亮提示 ====
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
 
 # =========================================================================
-# 主功能模块
+# 1. 启动酒馆
 # =========================================================================
-
-# ==== 启动 SillyTavern ====
 start_tavern() {
-    echo -e "\n${GREEN}${BOLD}==== 启动 SillyTavern ====${NC}"
+    echo -e "\n${BLUE}${BOLD}==== 启动 SillyTavern ====${NC}"
     for dep in node npm git; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，请先修复依赖环境。${NC}"
-            press_any_key
-            return
+            press_any_key; return
         fi
     done
     if [ -d "$HOME/SillyTavern" ]; then
@@ -70,12 +66,14 @@ start_tavern() {
     fi
 }
 
-# ==== 更新 SillyTavern ====
+# =========================================================================
+# 2. 更新酒馆
+# =========================================================================
 update_tavern() {
-    echo -e "\n${GREEN}${BOLD}==== 更新 SillyTavern ====${NC}"
+    echo -e "\n${MAGENTA}${BOLD}==== 更新 SillyTavern ====${NC}"
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern"
-        echo -e "${BLUE}${BOLD}>> 正在拉取最新代码...${NC}"
+        echo -e "${CYAN}${BOLD}>> 正在拉取最新代码...${NC}"
         git pull
         press_any_key
         cd "$HOME"
@@ -85,203 +83,74 @@ update_tavern() {
     fi
 }
 
-# ==== 查看依赖版本 ====
-show_dependencies() {
-    echo -e "\n${GREEN}${BOLD}==== 依赖版本信息 ====${NC}"
-    echo -ne "${GREEN}${BOLD}git:   "; git --version
-    echo -ne "${YELLOW}${BOLD}node:  "; node -v
-    echo -ne "${CYAN}${BOLD}npm:   "; command -v npm >/dev/null 2>&1 && npm -v || echo -e "${RED}${BOLD}未安装${NC}"
-    echo -ne "${MAGENTA}${BOLD}curl:  "; command -v curl >/dev/null 2>&1 && curl --version | head -n1 || echo -e "${RED}${BOLD}未安装${NC}"
-    echo -e "${CYAN}${BOLD}======================${NC}"
-    press_any_key
-}
-
-# ==== 修复依赖环境 ====
-fix_dependencies() {
-    echo -e "\n${GREEN}${BOLD}==== 修复依赖环境 ====${NC}"
-    pkg update -y && pkg upgrade -y
-    for dep in git curl; do
-        if ! command -v $dep >/dev/null 2>&1; then
-            echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
-            pkg install -y $dep
-        else
-            echo -e "${CYAN}${BOLD}>> $dep 已安装，跳过。${NC}"
-        fi
-    done
-    if ! command -v node >/dev/null 2>&1; then
-        if pkg list-all | grep -q '^nodejs-lts/'; then
-            echo -e "${YELLOW}${BOLD}>> 检测到未安装：node，正在安装 nodejs-lts...${NC}"
-            pkg install -y nodejs-lts || pkg install -y nodejs
-        else
-            echo -e "${YELLOW}${BOLD}>> 检测到未安装：node，正在安装 nodejs...${NC}"
-            pkg install -y nodejs
-        fi
-    else
-        echo -e "${CYAN}${BOLD}>> node 已安装，跳过。${NC}"
-    fi
-    npm config set prefix $PREFIX
-    echo -e "${GREEN}${BOLD}>> 依赖修复完成。${NC}"
-    press_any_key
-}
-
-# ==== 系统维护菜单 ====
-maintenance_menu() {
+# =========================================================================
+# 3. 酒馆配置
+# =========================================================================
+tavern_config_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 系统维护 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${BLUE}${BOLD}1. 查看依赖版本${NC}"
-        echo -e "${MAGENTA}${BOLD}2. 修复依赖环境${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${YELLOW}${BOLD}请选择操作（0-2）：${NC}"
-        read -n1 sub_choice; echo
-        case "$sub_choice" in
+        echo -e "${YELLOW}${BOLD}==== 酒馆配置 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级目录${NC}"
+        echo -e "${BLUE}${BOLD}1. 开启网络监听${NC}"
+        echo -e "${MAGENTA}${BOLD}2. 关闭网络监听${NC}"
+        echo -e "${CYAN}${BOLD}3. 恢复配置文件${NC}"
+        echo -e "${YELLOW}${BOLD}==================${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-3）：${NC}"
+        read -n1 config_choice; echo
+        case "$config_choice" in
             0) break ;;
-            1) show_dependencies ;;
-            2) fix_dependencies ;;
+            1|2|3)
+                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 目录不存在！${NC}"; press_any_key; continue; }
+                if [ ! -f config.yaml ] && [ "$config_choice" != "3" ]; then
+                    echo -e "${RED}${BOLD}>> 未找到 config.yaml 文件，无法操作。${NC}"
+                    press_any_key; continue
+                fi
+                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
+                if [ "$config_choice" = "1" ]; then
+                    sed -i 's/^listen: false$/listen: true/' config.yaml
+                    sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' config.yaml
+                    sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' config.yaml
+                    sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' config.yaml
+                    echo -e "${BLUE}${BOLD}>> 网络监听已开启${NC}"
+                elif [ "$config_choice" = "2" ]; then
+                    sed -i 's/^listen: true$/listen: false/' config.yaml
+                    sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' config.yaml
+                    sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' config.yaml
+                    sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' config.yaml
+                    echo -e "${MAGENTA}${BOLD}>> 网络监听已关闭${NC}"
+                else
+                    if [ ! -f config.yaml.bak ]; then
+                        echo -e "${YELLOW}${BOLD}>> 未找到 config.yaml.bak 备份文件，无法恢复配置文件。${NC}"
+                        press_any_key; continue
+                    fi
+                    cp config.yaml.bak config.yaml
+                    echo -e "${CYAN}${BOLD}>> 已恢复初始配置${NC}"
+                fi
+                press_any_key
+                ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
 }
 
-# ==== 检查并升级脚本 ====
-check_update() {
-    TMP_ENV="$HOME/.env.remote"
-    echo -e "\n${GREEN}${BOLD}==== 检查脚本更新 ====${NC}"
-    if ! ping -c 1 -W 1 gitee.com >/dev/null 2>&1; then
-        echo -e "${RED}${BOLD}>> 网络不可用，请检查网络连接。${NC}"
-        press_any_key; return
-    fi
-    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
-        echo -e "${RED}${BOLD}>> 无法获取远程版本信息，请检查网络。${NC}"
-        rm -f "$TMP_ENV"; press_any_key; return
-    fi
-    if [ ! -f "$HOME/.env" ]; then
-        echo -e "${RED}${BOLD}>> 本地 .env 文件不存在，无法检测更新。${NC}"
-        rm -f "$TMP_ENV"; press_any_key; return
-    fi
-
-    LOCAL_INSTALL_VERSION=$(get_version "$HOME/.env" "INSTALL_VERSION")
-    LOCAL_MENU_VERSION=$(get_version "$HOME/.env" "MENU_VERSION")
-    REMOTE_INSTALL_VERSION=$(get_version "$TMP_ENV" "INSTALL_VERSION")
-    REMOTE_MENU_VERSION=$(get_version "$TMP_ENV" "MENU_VERSION")
-    echo -e "${YELLOW}${BOLD}>> 本地 Install.sh 版本：${LOCAL_INSTALL_VERSION}${NC}"
-    echo -e "${YELLOW}${BOLD}>> 远程 Install.sh 版本：${REMOTE_INSTALL_VERSION}${NC}"
-    echo -e "${YELLOW}${BOLD}>> 本地 menu.sh 版本：${LOCAL_MENU_VERSION}${NC}"
-    echo -e "${YELLOW}${BOLD}>> 远程 menu.sh 版本：${REMOTE_MENU_VERSION}${NC}"
-
-    if [ -z "$LOCAL_INSTALL_VERSION" ] || [ -z "$LOCAL_MENU_VERSION" ] || [ -z "$REMOTE_INSTALL_VERSION" ] || [ -z "$REMOTE_MENU_VERSION" ]; then
-        echo -e "${RED}${BOLD}>> 版本号读取失败，请检查 .env 文件格式。${NC}"
-        rm -f "$TMP_ENV"; press_any_key; return
-    fi
-
-    updated=0
-    if [ "$LOCAL_INSTALL_VERSION" -lt "$REMOTE_INSTALL_VERSION" ]; then
-        echo -e "${YELLOW}${BOLD}>> 检测到 Install.sh 有新版本，正在更新...${NC}"
-        if curl -fsSL -o "$HOME/Install.sh" "$REMOTE_INSTALL_URL"; then
-            chmod +x "$HOME/Install.sh"
-            echo -e "${GREEN}${BOLD}>> Install.sh 已更新。${NC}"
-            updated=1
-        else
-            echo -e "${RED}${BOLD}>> Install.sh 更新失败。${NC}"
-        fi
-    else
-        echo -e "${GREEN}${BOLD}>> Install.sh 已是最新版本。${NC}"
-    fi
-    if [ "$LOCAL_MENU_VERSION" -lt "$REMOTE_MENU_VERSION" ]; then
-        echo -e "${YELLOW}${BOLD}>> 检测到 menu.sh 有新版本，正在更新...${NC}"
-        if curl -fsSL -o "$HOME/menu.sh" "$REMOTE_MENU_URL"; then
-            chmod +x "$HOME/menu.sh"
-            echo -e "${GREEN}${BOLD}>> menu.sh 已更新。${NC}"
-            updated=1
-        else
-            echo -e "${RED}${BOLD}>> menu.sh 更新失败。${NC}"
-        fi
-    else
-        echo -e "${GREEN}${BOLD}>> menu.sh 已是最新版本。${NC}"
-    fi
-
-    if [ $updated -eq 1 ]; then
-        mv "$TMP_ENV" "$HOME/.env"
-        echo -e "${GREEN}${BOLD}>> 本地版本号已同步更新。${NC}"
-        echo -e "${CYAN}${BOLD}>> 脚本已更新，将自动重启菜单...${NC}"
-        sleep 2
-        exec bash "$HOME/menu.sh"
-    else
-        rm -f "$TMP_ENV"
-    fi
-    press_any_key
-}
-
-# ==== 查看更新日志 ====
-show_update_log() {
-    echo -e "\n${GREEN}${BOLD}==== 更新日志 ====${NC}"
-    echo -e "${CYAN}${BOLD}脚本更新日期：${YELLOW}${BOLD}${UPDATE_DATE}${NC}"
-    echo -e "${CYAN}${BOLD}更新内容：${NC}${UPDATE_CONTENT}"
-    echo -e "${CYAN}${BOLD}==================${NC}"
-    press_any_key
-}
-
-# ==== 一键卸载 ====
-uninstall_all() {
-    echo -e "\n${RED}${BOLD}==== 卸载警告 ====${NC}"
-    echo -e "${RED}${BOLD}>> 即将卸载 SillyTavern 及相关配置，操作不可逆！${NC}"
-    echo -ne "${RED}${BOLD}是否继续？(y/n)：${NC}"
-    read -n1 confirm; echo
-    if [[ "$confirm" =~ [yY] ]]; then
-        if [ -d "$HOME/SillyTavern/.git" ]; then
-            rm -rf "$HOME/SillyTavern"
-        fi
-        rm -f "$HOME/menu.sh" "$HOME/.env" "$HOME/Install.sh"
-        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.bashrc" 2>/dev/null
-        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.bash_profile" 2>/dev/null
-        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.profile" 2>/dev/null
-        echo -e "${GREEN}${BOLD}>> 卸载完成，已清理相关文件。${NC}"
-        exit 0
-    else
-        echo -e "${YELLOW}${BOLD}>> 已取消卸载。${NC}"
-        sleep 1
-    fi
-}
-
-# ==== 脚本管理菜单 ====
-script_manage_menu() {
-    while true; do
-        clear
-        echo -e "${CYAN}${BOLD}==== 脚本管理 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${YELLOW}${BOLD}1. 菜单脚本更新${NC}"
-        echo -e "${CYAN}${BOLD}2. 查看更新日志${NC}"
-        echo -e "${RED}${BOLD}3. 一键卸载酒馆${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${YELLOW}${BOLD}请选择操作（0-3）：${NC}"
-        read -n1 sub_choice; echo
-        case "$sub_choice" in
-            0) break ;;
-            1) check_update ;;
-            2) show_update_log ;;
-            3) uninstall_all ;;
-            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
-        esac
-    done
-}
-
-# ==== 插件安装菜单 ====
+# =========================================================================
+# 4. 酒馆插件
+# =========================================================================
 plugin_install_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
-        echo -e "${BLUE}${BOLD}2. 记忆表格      ${YELLOW}${BOLD}（结构化记忆）${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${YELLOW}${BOLD}请选择操作（0-2）：${NC}"
+        echo -e "${GREEN}${BOLD}==== 插件安装 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${MAGENTA}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
+        echo -e "${CYAN}${BOLD}2. 记忆表格      ${BLUE}${BOLD}（结构化记忆）${NC}"
+        echo -e "${GREEN}${BOLD}==================${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-2）：${NC}"
         read -n1 plugin_choice; echo
         case "$plugin_choice" in
             0) break ;;
             1)
                 clear
-                echo -e "${GREEN}${BOLD}==== 酒馆助手 ====${NC}"
+                echo -e "${MAGENTA}${BOLD}==== 酒馆助手 ====${NC}"
                 echo -e "${YELLOW}${BOLD}仓库：${NC}https://github.com/N0VI028/JS-Slash-Runner"
                 echo -e "${CYAN}${BOLD}功能简介：${NC}
 酒馆助手是为 SillyTavern 设计的多功能扩展插件，支持在对话中渲染各种交互式前端界面，实现与 SillyTavern 的深度交互，并可作为中间层连接外部应用程序，极大丰富了对话体验和扩展能力。
@@ -297,12 +166,10 @@ plugin_install_menu() {
   - 恶意脚本可能窃取 API 密钥、聊天记录等敏感信息，或破坏设置
   - 请务必核查脚本来源和内容，确保安全可信后再运行
 "
-                # 插件作者信息
                 echo -e "${CYAN}${BOLD}插件作者信息：                                          插件名称：酒馆助手${NC}"
                 echo -e "${GREEN}${BOLD}作者：KAKAA、青空莉想做舞台少女的狗${NC}"
                 echo -e "${MAGENTA}${BOLD}© 2025 N0VI028. 保留所有权利。${NC}"
-
-                echo -ne "${YELLOW}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
+                echo -ne "${WHITE}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
                 read -n1 ans; echo
                 if [[ "$ans" =~ [yY] ]]; then
                     PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/JS-Slash-Runner"
@@ -310,7 +177,7 @@ plugin_install_menu() {
                         echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
                     else
                         git clone https://github.com/N0VI028/JS-Slash-Runner "$PLUGIN_DIR" \
-                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
+                            && echo -e "${MAGENTA}${BOLD}>> 安装成功。${NC}" \
                             || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
                     fi
                     press_any_key
@@ -318,7 +185,7 @@ plugin_install_menu() {
                 ;;
             2)
                 clear
-                echo -e "${BLUE}${BOLD}==== 记忆表格 ====${NC}"
+                echo -e "${CYAN}${BOLD}==== 记忆表格 ====${NC}"
                 echo -e "${YELLOW}${BOLD}仓库：${NC}https://github.com/muyoou/st-memory-enhancement"
                 echo -e "${CYAN}${BOLD}功能简介：${NC}
 记忆增强插件专为 SillyTavern 酒馆打造，注入结构化长期记忆能力，支持角色设定、关键事件、重要物品等自定义内容，帮助 AI 更好地理解和记住对话上下文，使推演更连贯、更贴合情境。
@@ -335,15 +202,13 @@ plugin_install_menu() {
                 echo -e "${YELLOW}${BOLD}使用说明：${NC}
   - 插件仅在 SillyTavern 的“聊天补全模式”下工作
 "
-                # 插件作者信息（记忆表格）
                 echo -e "${CYAN}${BOLD}插件作者信息：                                          插件名称：记忆表格${NC}"
                 echo -e "${GREEN}${BOLD}作者：木悠${NC}"
                 echo -e "${GREEN}${BOLD}插件交流Q群：${NC}"
                 echo -e "${GREEN}${BOLD}一群：1030109849${NC}"
                 echo -e "${GREEN}${BOLD}二群：1045423946${NC}"
                 echo -e "${MAGENTA}${BOLD}© 2025 muyoou. 保留所有权利。${NC}"
-
-                echo -ne "${YELLOW}${BOLD}是否安装记忆表格？(y/n)：${NC}"
+                echo -ne "${WHITE}${BOLD}是否安装记忆表格？(y/n)：${NC}"
                 read -n1 ans; echo
                 if [[ "$ans" =~ [yY] ]]; then
                     PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/st-memory-enhancement"
@@ -351,7 +216,7 @@ plugin_install_menu() {
                         echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
                     else
                         git clone https://github.com/muyoou/st-memory-enhancement "$PLUGIN_DIR" \
-                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
+                            && echo -e "${CYAN}${BOLD}>> 安装成功。${NC}" \
                             || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
                     fi
                     press_any_key
@@ -362,27 +227,26 @@ plugin_install_menu() {
     done
 }
 
-# ==== 插件卸载菜单 ====
 plugin_uninstall_menu() {
     local PLUGIN_ROOT="$HOME/SillyTavern/public/scripts/extensions/third-party"
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 插件卸载 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${YELLOW}${BOLD}==== 插件卸载 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
         if [ ! -d "$PLUGIN_ROOT" ]; then
             echo -e "${RED}${BOLD}>> 插件目录不存在，无插件可卸载。${NC}"
             press_any_key; break
         fi
         mapfile -t plugin_dirs < <(find "$PLUGIN_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
         if [ ${#plugin_dirs[@]} -eq 0 ]; then
-            echo -e "${YELLOW}${BOLD}>> 未检测到已安装插件。${NC}"
+            echo -e "${MAGENTA}${BOLD}>> 未检测到已安装插件。${NC}"
             press_any_key; break
         fi
         for i in "${!plugin_dirs[@]}"; do
             plugin_name=$(basename "${plugin_dirs[$i]}")
-            echo -e "${GREEN}${BOLD}$((i+1)). ${CYAN}${BOLD}${plugin_name}${NC}"
+            echo -e "${CYAN}${BOLD}$((i+1)). ${GREEN}${BOLD}${plugin_name}${NC}"
         done
-        echo -e "${YELLOW}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
+        echo -e "${WHITE}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
         read -r idx
         if [[ "$idx" == "0" ]]; then
             break
@@ -405,16 +269,15 @@ plugin_uninstall_menu() {
     done
 }
 
-# ==== 插件管理主菜单 ====
 plugin_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 酒馆插件 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${RED}${BOLD}==== 酒馆插件 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 安装插件${NC}"
-        echo -e "${RED}${BOLD}2. 卸载插件${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${YELLOW}${BOLD}请选择操作（0-2）：${NC}"
+        echo -e "${YELLOW}${BOLD}2. 卸载插件${NC}"
+        echo -e "${RED}${BOLD}==================${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-2）：${NC}"
         read -n1 sub_choice; echo
         case "$sub_choice" in
             0) break ;;
@@ -425,33 +288,246 @@ plugin_menu() {
     done
 }
 
-# ==== 关于脚本二级菜单 ====
+# =========================================================================
+# 5. 系统维护
+# =========================================================================
+show_dependencies() {
+    echo -e "\n${MAGENTA}${BOLD}==== 依赖版本信息 ====${NC}"
+    echo -ne "${CYAN}${BOLD}git:   "; git --version
+    echo -ne "${YELLOW}${BOLD}node:  "; node -v
+    echo -ne "${BLUE}${BOLD}npm:   "; command -v npm >/dev/null 2>&1 && npm -v || echo -e "${RED}${BOLD}未安装${NC}"
+    echo -ne "${GREEN}${BOLD}curl:  "; command -v curl >/dev/null 2>&1 && curl --version | head -n1 || echo -e "${RED}${BOLD}未安装${NC}"
+    echo -e "${MAGENTA}${BOLD}======================${NC}"
+    press_any_key
+}
+
+fix_dependencies() {
+    echo -e "\n${CYAN}${BOLD}==== 修复依赖环境 ====${NC}"
+    pkg update -y && pkg upgrade -y
+    for dep in git curl; do
+        if ! command -v $dep >/dev/null 2>&1; then
+            echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
+            pkg install -y $dep
+        else
+            echo -e "${GREEN}${BOLD}>> $dep 已安装，跳过。${NC}"
+        fi
+    done
+    if ! command -v node >/dev/null 2>&1; then
+        if pkg list-all | grep -q '^nodejs-lts/'; then
+            echo -e "${MAGENTA}${BOLD}>> 检测到未安装：node，正在安装 nodejs-lts...${NC}"
+            pkg install -y nodejs-lts || pkg install -y nodejs
+        else
+            echo -e "${MAGENTA}${BOLD}>> 检测到未安装：node，正在安装 nodejs...${NC}"
+            pkg install -y nodejs
+        fi
+    else
+        echo -e "${CYAN}${BOLD}>> node 已安装，跳过。${NC}"
+    fi
+    npm config set prefix $PREFIX
+    echo -e "${CYAN}${BOLD}>> 依赖修复完成。${NC}"
+    press_any_key
+}
+
+export_tavern_data() {
+    echo -e "\n${YELLOW}${BOLD}==== 导出酒馆数据 ====${NC}"
+    cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> SillyTavern 目录不存在，无法导出。${NC}"; press_any_key; return; }
+    now=$(date +%Y%m%d_%H%M%S)
+    if [ ! -d data ]; then
+        echo -e "${MAGENTA}${BOLD}>> 未检测到 data 目录，无数据可导出。${NC}"
+        press_any_key
+        return
+    fi
+    zip -r "SillyTavern-Data_${now}.zip" data
+    mv "SillyTavern-Data_${now}.zip" /storage/emulated/0/Download/ 2>/dev/null \
+        && echo -e "${YELLOW}${BOLD}>> 导出完成，已保存到 下载 文件夹。${NC}" \
+        || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
+    press_any_key
+}
+
+export_tavern_full() {
+    echo -e "\n${WHITE}${BOLD}==== 导出酒馆本体 ====${NC}"
+    cd "$HOME" || { echo -e "${RED}${BOLD}>> HOME 目录不存在，无法导出。${NC}"; press_any_key; return; }
+    if [ ! -d SillyTavern ]; then
+        echo -e "${MAGENTA}${BOLD}>> 未检测到 SillyTavern 目录，无本体可导出。${NC}"
+        press_any_key
+        return
+    fi
+    now=$(date +%Y%m%d_%H%M%S)
+    zip -r "SillyTavern_${now}.zip" SillyTavern
+    mv "SillyTavern_${now}.zip" /storage/emulated/0/Download/ 2>/dev/null \
+        && echo -e "${WHITE}${BOLD}>> 导出完成，已保存到 下载 文件夹。${NC}" \
+        || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
+    press_any_key
+}
+
+maintenance_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 系统维护 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${MAGENTA}${BOLD}1. 查看依赖版本${NC}"
+        echo -e "${CYAN}${BOLD}2. 修复依赖环境${NC}"
+        echo -e "${YELLOW}${BOLD}3. 导出酒馆数据${NC}"
+        echo -e "${WHITE}${BOLD}4. 导出酒馆本体${NC}"
+        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-4）：${NC}"
+        read -n1 sub_choice; echo
+        case "$sub_choice" in
+            0) break ;;
+            1) show_dependencies ;;
+            2) fix_dependencies ;;
+            3) export_tavern_data ;;
+            4) export_tavern_full ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# =========================================================================
+# 6. 脚本管理
+# =========================================================================
+check_update() {
+    TMP_ENV="$HOME/.env.remote"
+    echo -e "\n${BLUE}${BOLD}==== 检查脚本更新 ====${NC}"
+    if ! ping -c 1 -W 1 github.com >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}>> 网络不可用，请检查网络连接。${NC}"
+        press_any_key; return
+    fi
+    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
+        echo -e "${RED}${BOLD}>> 无法获取远程版本信息，请检查网络。${NC}"
+        rm -f "$TMP_ENV"; press_any_key; return
+    fi
+    if [ ! -f "$HOME/.env" ]; then
+        echo -e "${RED}${BOLD}>> 本地 .env 文件不存在，无法检测更新。${NC}"
+        rm -f "$TMP_ENV"; press_any_key; return
+    fi
+    LOCAL_INSTALL_VERSION=$(get_version "$HOME/.env" "INSTALL_VERSION")
+    LOCAL_MENU_VERSION=$(get_version "$HOME/.env" "MENU_VERSION")
+    REMOTE_INSTALL_VERSION=$(get_version "$TMP_ENV" "INSTALL_VERSION")
+    REMOTE_MENU_VERSION=$(get_version "$TMP_ENV" "MENU_VERSION")
+    echo -e "${YELLOW}${BOLD}>> 本地 Install.sh 版本：${LOCAL_INSTALL_VERSION}${NC}"
+    echo -e "${YELLOW}${BOLD}>> 远程 Install.sh 版本：${REMOTE_INSTALL_VERSION}${NC}"
+    echo -e "${YELLOW}${BOLD}>> 本地 menu.sh 版本：${LOCAL_MENU_VERSION}${NC}"
+    echo -e "${YELLOW}${BOLD}>> 远程 menu.sh 版本：${REMOTE_MENU_VERSION}${NC}"
+    if [ -z "$LOCAL_INSTALL_VERSION" ] || [ -z "$LOCAL_MENU_VERSION" ] || [ -z "$REMOTE_INSTALL_VERSION" ] || [ -z "$REMOTE_MENU_VERSION" ]; then
+        echo -e "${RED}${BOLD}>> 版本号读取失败，请检查 .env 文件格式。${NC}"
+        rm -f "$TMP_ENV"; press_any_key; return
+    fi
+    updated=0
+    if [ "$LOCAL_INSTALL_VERSION" -lt "$REMOTE_INSTALL_VERSION" ]; then
+        echo -e "${MAGENTA}${BOLD}>> 检测到 Install.sh 有新版本，正在更新...${NC}"
+        if curl -fsSL -o "$HOME/Install.sh" "$REMOTE_INSTALL_URL"; then
+            chmod +x "$HOME/Install.sh"
+            echo -e "${GREEN}${BOLD}>> Install.sh 已更新。${NC}"
+            updated=1
+        else
+            echo -e "${RED}${BOLD}>> Install.sh 更新失败。${NC}"
+        fi
+    else
+        echo -e "${CYAN}${BOLD}>> Install.sh 已是最新版本。${NC}"
+    fi
+    if [ "$LOCAL_MENU_VERSION" -lt "$REMOTE_MENU_VERSION" ]; then
+        echo -e "${BLUE}${BOLD}>> 检测到 menu.sh 有新版本，正在更新...${NC}"
+        if curl -fsSL -o "$HOME/menu.sh" "$REMOTE_MENU_URL"; then
+            chmod +x "$HOME/menu.sh"
+            echo -e "${GREEN}${BOLD}>> menu.sh 已更新。${NC}"
+            updated=1
+        else
+            echo -e "${RED}${BOLD}>> menu.sh 更新失败。${NC}"
+        fi
+    else
+        echo -e "${CYAN}${BOLD}>> menu.sh 已是最新版本。${NC}"
+    fi
+    if [ $updated -eq 1 ]; then
+        mv "$TMP_ENV" "$HOME/.env"
+        echo -e "${GREEN}${BOLD}>> 本地版本号已同步更新。${NC}"
+        echo -e "${CYAN}${BOLD}>> 脚本已更新，将自动重启菜单...${NC}"
+        sleep 2
+        exec bash "$HOME/menu.sh"
+    else
+        rm -f "$TMP_ENV"
+    fi
+    press_any_key
+}
+
+show_update_log() {
+    echo -e "\n${YELLOW}${BOLD}==== 更新日志 ====${NC}"
+    echo -e "${MAGENTA}${BOLD}脚本更新日期：${YELLOW}${BOLD}${UPDATE_DATE}${NC}"
+    echo -e "${CYAN}${BOLD}更新内容：${NC}${UPDATE_CONTENT}"
+    echo -e "${YELLOW}${BOLD}==================${NC}"
+    press_any_key
+}
+
+uninstall_all() {
+    echo -e "\n${RED}${BOLD}==== 卸载警告 ====${NC}"
+    echo -e "${RED}${BOLD}>> 即将卸载 SillyTavern 及相关配置，操作不可逆！${NC}"
+    echo -ne "${RED}${BOLD}是否继续？(y/n)：${NC}"
+    read -n1 confirm; echo
+    if [[ "$confirm" =~ [yY] ]]; then
+        if [ -d "$HOME/SillyTavern/.git" ]; then
+            rm -rf "$HOME/SillyTavern"
+        fi
+        rm -f "$HOME/menu.sh" "$HOME/.env" "$HOME/Install.sh"
+        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.bashrc" 2>/dev/null
+        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.bash_profile" 2>/dev/null
+        sed -i '/bash[ ]\+\$HOME\/menu\.sh/d' "$HOME/.profile" 2>/dev/null
+        echo -e "${GREEN}${BOLD}>> 卸载完成，已清理相关文件。${NC}"
+        exit 0
+    else
+        echo -e "${YELLOW}${BOLD}>> 已取消卸载。${NC}"
+        sleep 1
+    fi
+}
+
+script_manage_menu() {
+    while true; do
+        clear
+        echo -e "${GREEN}${BOLD}==== 脚本管理 ====${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${MAGENTA}${BOLD}1. 菜单脚本更新${NC}"
+        echo -e "${BLUE}${BOLD}2. 查看更新日志${NC}"
+        echo -e "${RED}${BOLD}3. 一键卸载酒馆${NC}"
+        echo -e "${GREEN}${BOLD}==================${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-3）：${NC}"
+        read -n1 sub_choice; echo
+        case "$sub_choice" in
+            0) break ;;
+            1) check_update ;;
+            2) show_update_log ;;
+            3) uninstall_all ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# =========================================================================
+# 7. 关于脚本
+# =========================================================================
 about_script_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 关于脚本 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${GREEN}${BOLD}1. 作者信息${NC}"
+        echo -e "${WHITE}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${YELLOW}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
         echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${YELLOW}${BOLD}请选择操作（0-3）：${NC}"
+        echo -ne "${WHITE}${BOLD}请选择操作（0-3）：${NC}"
         read -n1 about_choice; echo
         case "$about_choice" in
             0) break ;;
             1)
-                echo -e "\n${GREEN}${BOLD}==== 作者信息 ====${NC}"
+                echo -e "\n${YELLOW}${BOLD}==== 作者信息 ====${NC}"
                 echo -e "${GREEN}${BOLD}作者：欤歡${NC}"
-                echo -e "${GREEN}${BOLD}Q群：1026387403${NC}"
-                echo -e "${GREEN}${BOLD}邮箱：print.yuhuan@gmail.com${NC}"
-                echo -e "${CYAN}${BOLD}==================${NC}"
+                echo -e "${MAGENTA}${BOLD}Q群：1026387403${NC}"
+                echo -e "${BLUE}${BOLD}邮箱：print.yuhuan@gmail.com${NC}"
+                echo -e "${YELLOW}${BOLD}==================${NC}"
                 press_any_key
                 ;;
             2)
                 echo -e "\n${BLUE}${BOLD}==== 加群交流 ====${NC}"
                 echo -e "${GREEN}${BOLD}欢迎加入 SillyTavern-Termux 用户交流群！${NC}"
-                echo -e "${GREEN}${BOLD}QQ群号：1026387403${NC}"
-                # 自动调起 QQ 加群
+                echo -e "${MAGENTA}${BOLD}QQ群号：1026387403${NC}"
                 if command -v am >/dev/null 2>&1; then
                     am start -a android.intent.action.VIEW -d "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=1026387403&card_type=group&source=qrcode" >/dev/null 2>&1 \
                         && echo -e "${GREEN}${BOLD}>> 已尝试自动打开 QQ 加群页面。${NC}" \
@@ -463,7 +539,7 @@ about_script_menu() {
                 ;;
             3)
                 echo -e "\n${MAGENTA}${BOLD}==== 邮件反馈 ====${NC}"
-                echo -e "${GREEN}${BOLD}即将打开系统邮件应用，收件人：print.yuhuan@gmail.com${NC}"
+                echo -e "${BLUE}${BOLD}即将打开系统邮件应用，收件人：print.yuhuan@gmail.com${NC}"
                 if command -v am >/dev/null 2>&1; then
                     am start -a android.intent.action.SENDTO -d mailto:print.yuhuan@gmail.com >/dev/null 2>&1 \
                         && echo -e "${GREEN}${BOLD}>> 已调用系统邮件应用。${NC}" \
@@ -485,23 +561,25 @@ while true; do
     clear
     echo -e "${CYAN}${BOLD}==== SillyTavern Termux 菜单 ====${NC}"
     echo -e "${RED}${BOLD}0. 退出脚本${NC}"
-    echo -e "${GREEN}${BOLD}1. 启动酒馆${NC}"
-    echo -e "${YELLOW}${BOLD}2. 更新酒馆${NC}"
-    echo -e "${BLUE}${BOLD}3. 系统维护${NC}"
-    echo -e "${MAGENTA}${BOLD}4. 酒馆插件${NC}"
-    echo -e "${CYAN}${BOLD}5. 脚本管理${NC}"
-    echo -e "${GREEN}${BOLD}6. 关于脚本${NC}"
+    echo -e "${BLUE}${BOLD}1. 启动酒馆${NC}"
+    echo -e "${MAGENTA}${BOLD}2. 更新酒馆${NC}"
+    echo -e "${YELLOW}${BOLD}3. 酒馆配置${NC}"
+    echo -e "${GREEN}${BOLD}4. 酒馆插件${NC}"
+    echo -e "${CYAN}${BOLD}5. 系统维护${NC}"
+    echo -e "${WHITE}${BOLD}6. 脚本管理${NC}"
+    echo -e "${MAGENTA}${BOLD}7. 关于脚本${NC}"
     echo -e "${CYAN}${BOLD}=================================${NC}"
-    echo -ne "${YELLOW}${BOLD}请选择操作（0-6）：${NC}"
+    echo -ne "${WHITE}${BOLD}请选择操作（0-7）：${NC}"
     read -n1 choice; echo
     case "$choice" in
         0) echo -e "${RED}${BOLD}>> 脚本已退出，欢迎再次使用。${NC}"; sleep 0.5; clear; exit 0 ;;
         1) start_tavern ;;
         2) update_tavern ;;
-        3) maintenance_menu ;;
+        3) tavern_config_menu ;;
         4) plugin_menu ;;
-        5) script_manage_menu ;;
-        6) about_script_menu ;;
+        5) maintenance_menu ;;
+        6) script_manage_menu ;;
+        7) about_script_menu ;;
         *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
     esac
 done
