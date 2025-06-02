@@ -92,7 +92,7 @@ tavern_config_menu() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 酒馆配置 ====${NC}"
-        echo -e "${CYAN}${BOLD}0. 返回上级目录${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${BLUE}${BOLD}1. 开启网络监听${NC}"
         echo -e "${MAGENTA}${BOLD}2. 关闭网络监听${NC}"
         echo -e "${YELLOW}${BOLD}3. 恢复配置文件${NC}"
