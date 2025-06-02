@@ -17,8 +17,8 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250522
-UPDATE_DATE="2025-05-22"
+MENU_VERSION=20250602
+UPDATE_DATE="2025-06-02"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
 2. 自动切换Termux软件源为清华镜像，提升安装速度与稳定性。
@@ -562,7 +562,6 @@ about_script_menu() {
 while true; do
     clear
     echo -e "${CYAN}${BOLD}==== SillyTavern Termux 菜单 ====${NC}"
-    echo -e "${CYAN}${BOLD}---------------------------------${NC}"
     echo -e "${RED}${BOLD}0. 退出脚本${NC}"
     echo -e "${GREEN}${BOLD}1. 启动酒馆${NC}"
     echo -e "${BLUE}${BOLD}2. 更新酒馆${NC}"
@@ -571,7 +570,7 @@ while true; do
     echo -e "${CYAN}${BOLD}5. 系统维护${NC}"
     echo -e "${BRIGHT_BLUE}${BOLD}6. 脚本管理${NC}"
     echo -e "${BRIGHT_MAGENTA}${BOLD}7. 关于脚本${NC}"
-    echo -e "${CYAN}${BOLD}---------------------------------${NC}"
+    echo -e "${CYAN}${BOLD}=================================${NC}"
     echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
     read -n1 choice; echo
     case "$choice" in
