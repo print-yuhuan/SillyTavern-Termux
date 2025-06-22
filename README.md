@@ -93,7 +93,7 @@ A5：详见下方“联系方式”部分。
 
 - **作者：欤歡**
 - **邮箱：print.yuhuan@gmail.com**
-- **QQ群：1026387403**
+- **QQ群：807134015**
 - **项目主页**：[https://github.com/print-yuhuan/SillyTavern-Termux](https://github.com/print-yuhuan/SillyTavern-Termux)
 
 ---

@@ -17,8 +17,8 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250607
-UPDATE_DATE="2025-06-07"
+MENU_VERSION=20250622
+UPDATE_DATE="2025-06-22"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
 2. 自动切换Termux软件源为清华镜像，提升安装速度与稳定性。
@@ -521,7 +521,7 @@ about_script_menu() {
             1)
                 echo -e "\n${CYAN}${BOLD}==== 作者信息 ====${NC}"
                 echo -e "${GREEN}${BOLD}作者：欤歡${NC}"
-                echo -e "${MAGENTA}${BOLD}Q群：1026387403${NC}"
+                echo -e "${MAGENTA}${BOLD}Q群：807134015${NC}"
                 echo -e "${BLUE}${BOLD}邮箱：print.yuhuan@gmail.com${NC}"
                 echo -e "${CYAN}${BOLD}==================${NC}"
                 press_any_key
@@ -529,9 +529,9 @@ about_script_menu() {
             2)
                 echo -e "\n${CYAN}${BOLD}==== 加群交流 ====${NC}"
                 echo -e "${GREEN}${BOLD}欢迎加入 SillyTavern-Termux 用户交流群！${NC}"
-                echo -e "${MAGENTA}${BOLD}QQ群号：1026387403${NC}"
+                echo -e "${MAGENTA}${BOLD}QQ群号：807134015${NC}"
                 if command -v am >/dev/null 2>&1; then
-                    am start -a android.intent.action.VIEW -d "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=1026387403&card_type=group&source=qrcode" >/dev/null 2>&1 \
+                    am start -a android.intent.action.VIEW -d "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=807134015&card_type=group&source=qrcode" >/dev/null 2>&1 \
                         && echo -e "${GREEN}${BOLD}>> 已尝试自动打开 QQ 加群页面。${NC}" \
                         || echo -e "${YELLOW}${BOLD}>> 未能自动打开 QQ，请手动搜索群号加入。${NC}"
                 else
