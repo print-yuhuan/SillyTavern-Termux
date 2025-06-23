@@ -17,8 +17,8 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250622
-UPDATE_DATE="2025-06-22"
+MENU_VERSION=20250624
+UPDATE_DATE="2025-06-24"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
 2. 自动切换Termux软件源为清华镜像，提升安装速度与稳定性。
