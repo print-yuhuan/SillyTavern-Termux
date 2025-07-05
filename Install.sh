@@ -134,16 +134,16 @@ fi
 # 步骤 6/8：下载菜单脚本与配置文件
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 6/8：下载菜单脚本与配置文件 ====${NC}"
-MENU_PATH="$HOME/menu.sh"
+MENU_PATH="$HOME/Menu.sh"
 ENV_PATH="$HOME/.env"
-MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/menu.sh"
+MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Menu.sh"
 ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 
 if [ -f "$MENU_PATH" ]; then
-    echo -e "${YELLOW}${BOLD}>> menu.sh 已存在，跳过下载。${NC}"
+    echo -e "${YELLOW}${BOLD}>> Menu.sh 已存在，跳过下载。${NC}"
 else
     curl -fsSL -o "$MENU_PATH" "$MENU_URL" && chmod +x "$MENU_PATH" \
-    || { echo -e "${RED}${BOLD}>> menu.sh 下载失败！${NC}"; exit 1; }
+    || { echo -e "${RED}${BOLD}>> Menu.sh 下载失败！${NC}"; exit 1; }
 fi
 
 if [ -f "$ENV_PATH" ]; then
@@ -171,8 +171,8 @@ if [ -z "$PROFILE_FILE" ]; then
     PROFILE_FILE="$HOME/.bashrc"
 fi
 touch "$PROFILE_FILE"
-if ! grep -qE 'bash[ ]+\$HOME/menu\.sh' "$PROFILE_FILE"; then
-    echo 'bash $HOME/menu.sh' >> "$PROFILE_FILE"
+if ! grep -qE 'bash[ ]+\$HOME/Menu\.sh' "$PROFILE_FILE"; then
+    echo 'bash $HOME/Menu.sh' >> "$PROFILE_FILE"
     echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置自动启动菜单。${NC}"
 else
     echo -e "${YELLOW}${BOLD}>> 自动启动菜单已配置，跳过。${NC}"
@@ -198,4 +198,4 @@ echo -e "${GREEN}${BOLD}>> 步骤 8/8 完成：SillyTavern 依赖已安装。${N
 echo -e "\n${GREEN}${BOLD}==== 安装完成！即将启动主菜单 ====${NC}\n"
 echo -e "${CYAN}${BOLD}>> 按任意键进入主菜单...${NC}"
 read -n1 -s
-exec bash "$HOME/menu.sh"
+exec bash "$HOME/Menu.sh"

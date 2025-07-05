@@ -20,7 +20,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 ## 重要提示
 
-- **Termux 推荐版本：0.119.0-beta.3**
+- **Termux 推荐版本：0.118.3 / 0.119.0-beta.3**
 - **强烈建议使用 [GitHub](https://github.com/termux/termux-app/releases) 或 [F-Droid](https://f-droid.org/en/packages/com.termux) 发布的 Termux，避免 Play 商店版。**
 - Play 商店版功能受限，可能导致脚本无法正常运行。
 - 保证网络畅通，否则依赖包下载、仓库克隆等操作可能失败。
