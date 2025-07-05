@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20250624
+INSTALL_VERSION=20250706
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -60,7 +60,7 @@ echo -e "${GREEN}${BOLD}>> 步骤 2/8 完成：包管理器已更新。${NC}"
 # 步骤 3/8：安装依赖
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 3/8：安装依赖 ====${NC}"
-for dep in git curl zip; do
+for dep in git curl zip unzip; do
     if ! command -v $dep >/dev/null 2>&1; then
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
         pkg install -y $dep

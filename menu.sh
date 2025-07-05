@@ -17,22 +17,21 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250624
-UPDATE_DATE="2025-06-24"
+MENU_VERSION=20250706
+UPDATE_DATE="2025-07-06"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
-2. 自动切换Termux软件源为清华镜像，提升安装速度与稳定性。
-3. 增强依赖检测与修复逻辑，支持一键修复、自动补全缺失组件。
-4. 新增主菜单“系统维护”“脚本管理”“插件管理”模块，结构更清晰。
-5. 实现插件一键安装、卸载及高亮提示，支持第三方插件扩展。
-6. 支持脚本一键自更新，远程同步版本号，更新过程自动重载菜单。
-7. 优化自动启动逻辑，首次及后续进入Termux均可自动弹出主菜单。
-8. 新增终端字体自动配置，提升界面显示效果。
-9. 所有菜单与提示信息采用统一色彩与加粗高亮，交互体验更佳。
-10. 代码结构与注释分段更规范，便于后续维护与二次开发。
-11. 优化换源与包管理逻辑，采用软链接方式切换清华镜像。
-12. 关于作者菜单升级为“关于脚本”二级菜单，支持作者信息、加群交流、邮件反馈等功能。
-13. “加群交流”支持自动调起 QQ 加群页面，提升用户体验。
+2. 增强依赖检测与修复逻辑，自动补全缺失组件（git、curl、zip、unzip、nodejs等）。
+3. 新增主菜单模块：系统维护、脚本管理、插件管理，结构更清晰。
+4. 支持插件一键安装与卸载，附详细功能介绍与安全提示。
+5. 实现脚本自更新，远程同步版本号，自动重载菜单。
+6. 自动配置终端字体，优化界面显示效果。
+7. 所有菜单与提示信息采用统一色彩与加粗高亮，提升交互体验。
+8. 关于脚本菜单支持作者信息、加群交流、邮件反馈，支持自动调起相关应用。
+9. 系统维护模块支持一键导出/导入酒馆数据和本体，自动扫描下载目录备份，交互式选择与安全恢复，具备覆盖警告与二次确认。
+10. 支持依赖版本检测与一键修复。
+11. 支持一键卸载酒馆及相关脚本配置，彻底清理环境。
+12. 所有操作均有详细进度与友好反馈，提升易用性与安全性。
 "
 REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
@@ -306,7 +305,7 @@ show_dependencies() {
 fix_dependencies() {
     echo -e "\n${CYAN}${BOLD}==== 修复依赖环境 ====${NC}"
     pkg update -y && pkg upgrade -y
-    for dep in git curl; do
+    for dep in git curl unzip; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
             pkg install -y $dep
@@ -362,6 +361,122 @@ export_tavern_full() {
     press_any_key
 }
 
+import_tavern_data() {
+    echo -e "\n${CYAN}${BOLD}==== 导入酒馆数据 ====${NC}"
+    if ! command -v unzip >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}>> 检测到 unzip 未安装，请执行 pkg install unzip 后重试。${NC}"
+        press_any_key; return
+    fi
+    BACKUP_DIR="/storage/emulated/0/Download"
+    PATTERN="SillyTavern-Data_*.zip"
+    mapfile -t backup_files < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name "$PATTERN" 2>/dev/null | xargs -r ls -t 2>/dev/null)
+    if [ ${#backup_files[@]} -eq 0 ]; then
+        echo -e "${YELLOW}${BOLD}>> 未在下载目录中检测到可用的备份文件。${NC}"
+        press_any_key; return
+    fi
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 导入酒馆数据 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        for i in "${!backup_files[@]}"; do
+            fname=$(basename "${backup_files[$i]}")
+            echo -e "${GREEN}${BOLD}$((i+1)). $fname${NC}"
+        done
+        echo -e "${CYAN}${BOLD}=====================${NC}"
+        echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
+        read -r idx
+        if [[ "$idx" == "0" ]]; then
+            return
+        fi
+        if [[ "$idx" =~ ^[1-9][0-9]*$ ]] && [ "$idx" -le "${#backup_files[@]}" ]; then
+            selected_file="${backup_files[$((idx-1))]}"
+            TARGET_DIR="$HOME/SillyTavern/data"
+            if [ ! -d "$HOME/SillyTavern" ]; then
+                echo -e "${YELLOW}${BOLD}>> 未检测到 SillyTavern 主目录，请先恢复酒馆本体。${NC}"
+                press_any_key; return
+            fi
+            if [ -d "$TARGET_DIR" ]; then
+                echo -e "${YELLOW}${BOLD}>> 警告：目标目录 ${TARGET_DIR} 已存在。"
+                echo -e ">> 继续操作将彻底删除该目录及其所有内容，然后从备份恢复。"
+                echo -e ">> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
+                read -n1 confirm; echo
+                if ! [[ "$confirm" =~ [yY] ]]; then
+                    echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
+                    press_any_key; return
+                fi
+                rm -rf "$TARGET_DIR"
+            fi
+            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复至 $TARGET_DIR ...${NC}"
+            mkdir -p "$HOME/SillyTavern"
+            if unzip -o "$selected_file" -d "$HOME/SillyTavern/" >/dev/null 2>&1; then
+                echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
+            else
+                echo -e "${RED}${BOLD}>> 恢复失败，请检查压缩包是否完整或存储权限。${NC}"
+            fi
+            press_any_key; return
+        else
+            echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"
+            sleep 1
+        fi
+    done
+}
+
+import_tavern_full() {
+    echo -e "\n${CYAN}${BOLD}==== 导入酒馆本体 ====${NC}"
+    if ! command -v unzip >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}>> 检测到 unzip 未安装，请执行 pkg install unzip 后重试。${NC}"
+        press_any_key; return
+    fi
+    BACKUP_DIR="/storage/emulated/0/Download"
+    PATTERN="SillyTavern_*.zip"
+    mapfile -t backup_files < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name "$PATTERN" 2>/dev/null | xargs -r ls -t 2>/dev/null)
+    if [ ${#backup_files[@]} -eq 0 ]; then
+        echo -e "${YELLOW}${BOLD}>> 未在下载目录中检测到可用的备份文件。${NC}"
+        press_any_key; return
+    fi
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 导入酒馆本体 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        for i in "${!backup_files[@]}"; do
+            fname=$(basename "${backup_files[$i]}")
+            echo -e "${GREEN}${BOLD}$((i+1)). $fname${NC}"
+        done
+        echo -e "${CYAN}${BOLD}=====================${NC}"
+        echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
+        read -r idx
+        if [[ "$idx" == "0" ]]; then
+            return
+        fi
+        if [[ "$idx" =~ ^[1-9][0-9]*$ ]] && [ "$idx" -le "${#backup_files[@]}" ]; then
+            selected_file="${backup_files[$((idx-1))]}"
+            TARGET_DIR="$HOME/SillyTavern"
+            if [ -d "$TARGET_DIR" ]; then
+                echo -e "${YELLOW}${BOLD}>> 警告：目标目录 ${TARGET_DIR} 已存在。"
+                echo -e ">> 继续操作将彻底删除该目录及其所有内容，然后从备份恢复。"
+                echo -e ">> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
+                read -n1 confirm; echo
+                if ! [[ "$confirm" =~ [yY] ]]; then
+                    echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
+                    press_any_key; return
+                fi
+                rm -rf "$TARGET_DIR"
+            fi
+            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复至 $TARGET_DIR ...${NC}"
+            mkdir -p "$HOME"
+            if unzip -o "$selected_file" -d "$HOME/" >/dev/null 2>&1; then
+                echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
+            else
+                echo -e "${RED}${BOLD}>> 恢复失败，请检查压缩包是否完整或存储权限。${NC}"
+            fi
+            press_any_key; return
+        else
+            echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"
+            sleep 1
+        fi
+    done
+}
+
 maintenance_menu() {
     while true; do
         clear
@@ -371,8 +486,10 @@ maintenance_menu() {
         echo -e "${GREEN}${BOLD}2. 修复依赖环境${NC}"
         echo -e "${YELLOW}${BOLD}3. 导出酒馆数据${NC}"
         echo -e "${MAGENTA}${BOLD}4. 导出酒馆本体${NC}"
+        echo -e "${GREEN}${BOLD}5. 导入酒馆数据${NC}"
+        echo -e "${BLUE}${BOLD}6. 导入酒馆本体${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-6）：${NC}"
         read -n1 sub_choice; echo
         case "$sub_choice" in
             0) break ;;
@@ -380,6 +497,8 @@ maintenance_menu() {
             2) fix_dependencies ;;
             3) export_tavern_data ;;
             4) export_tavern_full ;;
+            5) import_tavern_data ;;
+            6) import_tavern_full ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
