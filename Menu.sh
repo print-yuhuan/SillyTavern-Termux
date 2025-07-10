@@ -17,8 +17,8 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250706
-UPDATE_DATE="2025-07-06"
+MENU_VERSION=20250711
+UPDATE_DATE="2025-07-11"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
 2. 增强依赖检测与修复逻辑，自动补全缺失组件（git、curl、zip、unzip、nodejs等）。
@@ -304,7 +304,7 @@ show_dependencies() {
 
 fix_dependencies() {
     echo -e "\n${CYAN}${BOLD}==== 修复依赖环境 ====${NC}"
-    pkg update -y && pkg upgrade -y
+    pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confnew"
     for dep in git curl unzip; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"

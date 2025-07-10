@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20250706
+INSTALL_VERSION=20250711
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -51,9 +51,7 @@ echo -e "${GREEN}${BOLD}>> 步骤 1/8 完成：环境检测通过。${NC}"
 # 步骤 2/8：更新包管理器
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 2/8：更新包管理器 ====${NC}"
-OPENSSL_CNF="/data/data/com.termux/files/usr/etc/tls/openssl.cnf"
-[ -f "$OPENSSL_CNF" ] && rm -f "$OPENSSL_CNF"
-pkg update && pkg upgrade -y
+pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confnew"
 echo -e "${GREEN}${BOLD}>> 步骤 2/8 完成：包管理器已更新。${NC}"
 
 # =========================================================================
