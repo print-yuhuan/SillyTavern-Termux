@@ -738,18 +738,23 @@ install_discord_app() {
     FILENAME="Discord.apk"
     DEST="/storage/emulated/0/Download/$FILENAME"
     echo -e "${CYAN}${BOLD}>> 开始下载 Discord 应用...${NC}"
-    curl -L --progress-bar -o "$DEST" "$DISCORD_URL"
-    if [ $? -eq 0 ] && [ -s "$DEST" ]; then
-        echo -e "${GREEN}${BOLD}>> 下载完成，已保存到: $DEST${NC}"
-        if command -v am >/dev/null 2>&1; then
-            am start -a android.intent.action.VIEW -d "file://$DEST" -t "application/vnd.android.package-archive" >/dev/null 2>&1 \
-                && echo -e "${GREEN}${BOLD}>> 已调用系统安装管理器安装 Discord。${NC}" \
-                || echo -e "${YELLOW}${BOLD}>> 未能自动调用安装管理器，请手动在文件管理中安装 Discord。${NC}"
+    if curl -Lf --progress-bar -o "$DEST" "$DISCORD_URL"; then
+        if [ -s "$DEST" ]; then
+            echo -e "${GREEN}${BOLD}>> 下载完成，已保存到: $DEST${NC}"
+            if command -v am >/dev/null 2>&1; then
+                am start -a android.intent.action.VIEW -d "file://$DEST" -t "application/vnd.android.package-archive" >/dev/null 2>&1 \
+                    && echo -e "${GREEN}${BOLD}>> 已调用系统安装管理器安装 Discord。${NC}" \
+                    || echo -e "${YELLOW}${BOLD}>> 未能自动调用安装管理器，请手动在文件管理中安装 Discord。${NC}"
+            else
+                echo -e "${YELLOW}${BOLD}>> 当前环境不支持自动安装，请手动在文件管理中安装 Discord。${NC}"
+            fi
         else
-            echo -e "${YELLOW}${BOLD}>> 当前环境不支持自动安装，请手动在文件管理中安装 Discord。${NC}"
+            echo -e "${RED}${BOLD}>> 下载失败，文件为空，请检查网络或存储权限。${NC}"
+            rm -f "$DEST"
         fi
     else
         echo -e "${RED}${BOLD}>> 下载失败，请检查网络或存储权限。${NC}"
+        rm -f "$DEST"
     fi
     press_any_key
 }
