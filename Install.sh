@@ -92,7 +92,7 @@ mkdir -p "$FONT_DIR"
 if [ -f "$FONT_PATH" ]; then
     echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
 else
-    if curl -fsSL -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
+    if curl -L --progress-bar -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
         echo -e "${GREEN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
     else
         echo -e "${RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"

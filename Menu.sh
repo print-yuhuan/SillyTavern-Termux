@@ -729,10 +729,14 @@ install_discord_app() {
         echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
         press_any_key; return
     fi
-    DISCORD_URL=$(grep '^DISCORD_DOWNLOAD=' "$TMP_ENV" | cut -d'=' -f2-)
+    DISCORD_URL=$(grep '^DISCORD_DOWNLOAD=' "$TMP_ENV" | cut -d'=' -f2- | tr -d '\r' | xargs)
     rm -f "$TMP_ENV"
     if [ -z "$DISCORD_URL" ]; then
         echo -e "${YELLOW}${BOLD}>> 未配置 Discord 下载链接，请稍后重试。${NC}"
+        press_any_key; return
+    fi
+    if ! echo "$DISCORD_URL" | grep -q '^https\?://'; then
+        echo -e "${YELLOW}${BOLD}>> Discord 下载链接格式错误：$DISCORD_URL${NC}"
         press_any_key; return
     fi
     FILENAME="Discord.apk"
