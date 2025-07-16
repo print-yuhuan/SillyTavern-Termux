@@ -32,7 +32,7 @@ UPDATE_CONTENT="
 10. 支持依赖版本检测与一键修复。
 11. 支持一键卸载酒馆及相关脚本配置，彻底清理环境。
 12. 所有操作均有详细进度与友好反馈，提升易用性与安全性。
-13. 关于脚本菜单新增“资源链接”子菜单，支持：
+13. 关于脚本菜单新增“资源获取”子菜单，支持：
     - 应用安装：一键下载并自动安装 Discord 客户端，下载进度可视化，支持断点续传。
     - 酒馆社群：一键直达五大 Discord 社群频道（酒馆、类脑、旅程、言庭、桃源）。
 "
@@ -635,7 +635,7 @@ about_script_menu() {
         echo -e "${GREEN}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
         echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
-        echo -e "${BLUE}${BOLD}4. 资源链接${NC}"
+        echo -e "${BLUE}${BOLD}4. 资源获取${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 about_choice; echo
@@ -681,12 +681,12 @@ about_script_menu() {
 }
 
 # =========================================================================
-# 7.1 资源链接
+# 7.1 资源获取
 # =========================================================================
 resource_links_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 资源链接 ====${NC}"
+        echo -e "${CYAN}${BOLD}==== 资源获取 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 应用安装${NC}"
         echo -e "${BLUE}${BOLD}2. 酒馆社群${NC}"
