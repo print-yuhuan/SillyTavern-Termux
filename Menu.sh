@@ -17,8 +17,8 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250711
-UPDATE_DATE="2025-07-11"
+MENU_VERSION=20250716
+UPDATE_DATE="2025-07-16"
 UPDATE_CONTENT="
 1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
 2. 增强依赖检测与修复逻辑，自动补全缺失组件（git、curl、zip、unzip、nodejs等）。
@@ -32,6 +32,9 @@ UPDATE_CONTENT="
 10. 支持依赖版本检测与一键修复。
 11. 支持一键卸载酒馆及相关脚本配置，彻底清理环境。
 12. 所有操作均有详细进度与友好反馈，提升易用性与安全性。
+13. 关于脚本菜单新增“资源链接”子菜单，支持：
+    - 应用安装：一键下载并自动安装 Discord 客户端，下载进度可视化，支持断点续传。
+    - 酒馆社群：一键直达五大 Discord 社群频道（酒馆、类脑、旅程、言庭、桃源）。
 "
 REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
@@ -632,8 +635,9 @@ about_script_menu() {
         echo -e "${GREEN}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
         echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
+        echo -e "${BLUE}${BOLD}4. 资源链接${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 about_choice; echo
         case "$about_choice" in
             0) break ;;
@@ -670,9 +674,141 @@ about_script_menu() {
                 fi
                 press_any_key
                 ;;
+            4) resource_links_menu ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
+}
+
+# =========================================================================
+# 7.1 资源链接
+# =========================================================================
+resource_links_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 资源链接 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 应用安装${NC}"
+        echo -e "${BLUE}${BOLD}2. 酒馆社群${NC}"
+        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-2）：${NC}"
+        read -n1 res_choice; echo
+        case "$res_choice" in
+            0) break ;;
+            1) install_app_menu ;;
+            2) community_links_menu ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# =========================================================================
+# 7.1.1 应用安装
+# =========================================================================
+install_app_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 应用安装 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${MAGENTA}${BOLD}1. 安装Discord${NC}"
+        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-1）：${NC}"
+        read -n1 app_choice; echo
+        case "$app_choice" in
+            0) break ;;
+            1) install_discord_app ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+install_discord_app() {
+    TMP_ENV="$HOME/.env.remote"
+    echo -e "${CYAN}${BOLD}>> 正在获取 Discord 下载链接...${NC}"
+    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
+        echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
+        press_any_key; return
+    fi
+    DISCORD_URL=$(grep '^DISCORD_DOWNLOAD=' "$TMP_ENV" | cut -d'=' -f2-)
+    rm -f "$TMP_ENV"
+    if [ -z "$DISCORD_URL" ]; then
+        echo -e "${YELLOW}${BOLD}>> 未配置 Discord 下载链接，请稍后重试。${NC}"
+        press_any_key; return
+    fi
+    FILENAME="Discord.apk"
+    DEST="/storage/emulated/0/Download/$FILENAME"
+    echo -e "${CYAN}${BOLD}>> 开始下载 Discord 应用...${NC}"
+    curl -L --progress-bar -o "$DEST" "$DISCORD_URL"
+    if [ $? -eq 0 ] && [ -s "$DEST" ]; then
+        echo -e "${GREEN}${BOLD}>> 下载完成，已保存到: $DEST${NC}"
+        if command -v am >/dev/null 2>&1; then
+            am start -a android.intent.action.VIEW -d "file://$DEST" -t "application/vnd.android.package-archive" >/dev/null 2>&1 \
+                && echo -e "${GREEN}${BOLD}>> 已调用系统安装管理器安装 Discord。${NC}" \
+                || echo -e "${YELLOW}${BOLD}>> 未能自动调用安装管理器，请手动在文件管理中安装 Discord。${NC}"
+        else
+            echo -e "${YELLOW}${BOLD}>> 当前环境不支持自动安装，请手动在文件管理中安装 Discord。${NC}"
+        fi
+    else
+        echo -e "${RED}${BOLD}>> 下载失败，请检查网络或存储权限。${NC}"
+    fi
+    press_any_key
+}
+
+# =========================================================================
+# 7.1.2 酒馆社群
+# =========================================================================
+community_links_menu() {
+    TMP_ENV="$HOME/.env.remote"
+    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
+        echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
+        press_any_key; return
+    fi
+    JIUGUAN_LINK=$(grep '^JIUGUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    LEINAO_LINK=$(grep '^LEINAO_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    LVCHENG_LINK=$(grep '^LVCHENG_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    YANTING_LINK=$(grep '^YANTING_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    TAOYUAN_LINK=$(grep '^TAOYUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    rm -f "$TMP_ENV"
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 酒馆社群 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 酒馆频道${NC}"
+        echo -e "${BLUE}${BOLD}2. 类脑频道${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 旅程频道${NC}"
+        echo -e "${CYAN}${BOLD}4. 言庭频道${NC}"
+        echo -e "${YELLOW}${BOLD}5. 桃源频道${NC}"
+        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-5）：${NC}"
+        read -n1 link_choice; echo
+        case "$link_choice" in
+            0) break ;;
+            1) open_link_menu "酒馆频道" "$JIUGUAN_LINK" ;;
+            2) open_link_menu "类脑频道" "$LEINAO_LINK" ;;
+            3) open_link_menu "旅程频道" "$LVCHENG_LINK" ;;
+            4) open_link_menu "言庭频道" "$YANTING_LINK" ;;
+            5) open_link_menu "桃源频道" "$TAOYUAN_LINK" ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+open_link_menu() {
+    local name="$1"
+    local url="$2"
+    if [ -z "$url" ]; then
+        echo -e "${YELLOW}${BOLD}>> $name 未配置链接，请稍后重试。${NC}"
+        press_any_key; return
+    fi
+    echo -e "${CYAN}${BOLD}>> 即将打开 $name：$url${NC}"
+    if command -v am >/dev/null 2>&1; then
+        am start -a android.intent.action.VIEW -d "$url" >/dev/null 2>&1 \
+            && echo -e "${GREEN}${BOLD}>> 已调用系统浏览器打开。${NC}" \
+            || echo -e "${YELLOW}${BOLD}>> 未能自动打开浏览器，请手动访问上方链接。${NC}"
+    else
+        echo -e "${YELLOW}${BOLD}>> 当前环境不支持自动打开浏览器，请手动访问上方链接。${NC}"
+    fi
+    press_any_key
 }
 
 # =========================================================================
