@@ -58,8 +58,10 @@ start_tavern() {
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern"
         if [ -f "start.sh" ]; then
+            pkill -f "node server.js"
             bash start.sh
         else
+            pkill -f "node server.js"
             npm start
         fi
         press_any_key
