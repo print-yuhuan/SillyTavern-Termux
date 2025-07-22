@@ -19,7 +19,7 @@ INSTALL_VERSION=20250720
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 1/8：环境检测 ====${NC}"
 if [ -z "$PREFIX" ] || [[ "$PREFIX" != "/data/data/com.termux/files/usr" ]]; then
-    echo -e "${RED}${BOLD}>> 本脚本仅适用于 Termux 环境，请在 Termux 中运行！${NC}"
+    echo -e "${RED}${BOLD}>> 检测到非 Termux 环境，请在 Termux 中执行此脚本！${NC}"
     exit 1
 fi
 
