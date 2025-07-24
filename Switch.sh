@@ -93,22 +93,10 @@ if [ -f "$HOME_DIR/Menu.sh" ]; then
 fi
 
 # ===============================================================
-# 4. 修正 .bashrc 启动项为国际版菜单
-# ===============================================================
-BASHRC_FILE="$HOME_DIR/.bashrc"
-if [ -f "$BASHRC_FILE" ]; then
-    if grep -q "bash[[:space:]]\+\$HOME/Menu.sh" "$BASHRC_FILE"; then
-        sed -i 's#bash[[:space:]]\+\$HOME/Menu\.sh#bash $HOME/Menu.sh#g' "$BASHRC_FILE"
-        echo -e "${GREEN}${BOLD}>> 已修正 .bashrc 中的菜单启动命令为国际版。${NC}"
-    fi
-fi
-
-# ===============================================================
-# 5. 完成提示
+# 4. 完成提示
 # ===============================================================
 echo -e "\n${CYAN}${BOLD}------------------------------------------------${NC}"
-echo -e "${GREEN}${BOLD}>> 脚本已成功切换为国际版，后续请优先使用国际版主菜单。${NC}"
-echo -e "${YELLOW}${BOLD}>> 建议重新启动 Termux 或执行 bash ./Menu.sh 进入新菜单。${NC}"
+echo -e "${GREEN}${BOLD}>> 脚本已成功切换为国际版，建议重新启动 Termux。${NC}"
 echo -e "${RED}${BOLD}>> 大陆版脚本即将停止维护，不再提供功能更新或修复。${NC}"
 echo -e "${CYAN}${BOLD}------------------------------------------------${NC}"
 press_any_key
