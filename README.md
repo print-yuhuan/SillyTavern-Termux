@@ -49,10 +49,10 @@
 
 | 发布渠道     | 版本名称            | 下载链接 |
 |----------|---------------------|:-----------------------------------------------------------------------------------------:|
-| GitHub   | v0.118.3     | [点击下载](https://github.com/termux/termux-app/releases/download/v0.118.3/termux-app_v0.118.3+github-debug_universal.apk) |
-| GitHub   | v0.119.0-beta.3| [点击下载](https://github.com/termux/termux-app/releases/download/v0.119.0-beta.3/termux-app_v0.119.0-beta.3+apt-android-7-github-debug_universal.apk) |
-| F-Droid  | v0.118.3     | [点击下载](https://f-droid.org/repo/com.termux_1002.apk)              |
-| F-Droid  | v0.119.0-beta.3| [点击下载](https://f-droid.org/repo/com.termux_1022.apk)         |
+| GitHub   | 稳定版 v0.118.3     | [点击下载](https://github.com/termux/termux-app/releases/download/v0.118.3/termux-app_v0.118.3+github-debug_universal.apk) |
+| GitHub   | 测试版 v0.119.0-beta.3| [点击下载](https://github.com/termux/termux-app/releases/download/v0.119.0-beta.3/termux-app_v0.119.0-beta.3+apt-android-7-github-debug_universal.apk) |
+| F-Droid  | 稳定版 v0.118.3     | [点击下载](https://f-droid.org/repo/com.termux_1002.apk)              |
+| F-Droid  | 测试版 v0.119.0-beta.3| [点击下载](https://f-droid.org/repo/com.termux_1022.apk)         |
 
 ---
 
