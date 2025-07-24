@@ -87,9 +87,9 @@ done
 # ===============================================================
 # 3. 清理遗留大陆版脚本
 # ===============================================================
-if [ -f "$HOME_DIR/menu.sh" ]; then
-    echo -e "${YELLOW}${BOLD}>> 检测到旧版 menu.sh，正在删除...${NC}"
-    rm -f "$HOME_DIR/menu.sh"
+if [ -f "$HOME_DIR/Menu.sh" ]; then
+    echo -e "${YELLOW}${BOLD}>> 检测到旧版 Menu.sh，正在删除...${NC}"
+    rm -f "$HOME_DIR/Menu.sh"
 fi
 
 # ===============================================================
@@ -97,8 +97,8 @@ fi
 # ===============================================================
 BASHRC_FILE="$HOME_DIR/.bashrc"
 if [ -f "$BASHRC_FILE" ]; then
-    if grep -q "bash[[:space:]]\+\$HOME/menu.sh" "$BASHRC_FILE"; then
-        sed -i 's#bash[[:space:]]\+\$HOME/menu\.sh#bash $HOME/Menu.sh#g' "$BASHRC_FILE"
+    if grep -q "bash[[:space:]]\+\$HOME/Menu.sh" "$BASHRC_FILE"; then
+        sed -i 's#bash[[:space:]]\+\$HOME/Menu\.sh#bash $HOME/Menu.sh#g' "$BASHRC_FILE"
         echo -e "${GREEN}${BOLD}>> 已修正 .bashrc 中的菜单启动命令为国际版。${NC}"
     fi
 fi
