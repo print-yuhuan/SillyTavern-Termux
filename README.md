@@ -3,7 +3,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=social&label=Star)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom-blue.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
 [![Version](https://img.shields.io/badge/Version-2025.07.25-brightgreen.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
-[![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg)](#)
+[![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue)](https://qm.qq.com/q/Z1kk7tCrcG)
 
 ---
