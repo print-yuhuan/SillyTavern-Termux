@@ -80,14 +80,7 @@ update_tavern() {
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern"
         echo -e "${CYAN}${BOLD}>> 正在拉取最新代码...${NC}"
-        if [ -n "$(git status --porcelain)" ]; then
-            git stash
-            git pull
-            git stash pop
-            git stash clear
-        else
-            git pull
-        fi
+        git pull
         press_any_key
         cd "$HOME"
     else
