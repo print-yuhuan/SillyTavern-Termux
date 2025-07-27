@@ -25,12 +25,12 @@ import 'swiper/css/pagination';
 
 const base = import.meta.env.BASE_URL; // 自动获取 base
 const images = [
-  { src: `${base}preview1.jpg`, alt: '预览1' },
-  { src: `${base}preview2.jpg`, alt: '预览2' },
-  { src: `${base}preview3.jpg`, alt: '预览3' },
-  { src: `${base}preview4.jpg`, alt: '预览4' },
-  { src: `${base}preview5.jpg`, alt: '预览5' },
-  { src: `${base}preview6.jpg`, alt: '预览6' },
+  { src: `${base}sillytavern/preview1.jpg`, alt: '预览1' },
+  { src: `${base}sillytavern/preview2.jpg`, alt: '预览2' },
+  { src: `${base}sillytavern/preview3.jpg`, alt: '预览3' },
+  { src: `${base}sillytavern/preview4.jpg`, alt: '预览4' },
+  { src: `${base}sillytavern/preview5.jpg`, alt: '预览5' },
+  { src: `${base}sillytavern/preview6.jpg`, alt: '预览6' },
 ];
 </script>
 

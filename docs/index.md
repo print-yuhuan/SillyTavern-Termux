@@ -7,12 +7,12 @@ hero:
   text: 安卓端 SillyTavern 一站式部署与管理
   tagline: 一条命令，手机畅享 SillyTavern 全功能体验
   image:
-    src: /logo.png
+    src: /sillytavern/logo.png
     alt: logo
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/quickstart
+      link: /guide/sillytavern/quickstart
     - theme: alt
       text: GitHub
       link: https://github.com/print-yuhuan/SillyTavern-Termux

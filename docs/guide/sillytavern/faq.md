@@ -1,15 +1,15 @@
 ---
 sidebar:
   - text: 快速开始
-    link: /guide/quickstart
+    link: /guide/sillytavern/quickstart
   - text: 功能详解
-    link: /guide/menu
+    link: /guide/sillytavern/menu
   - text: 插件与扩展
-    link: /guide/plugins
+    link: /guide/sillytavern/plugins
   - text: 常见问题
-    link: /faq
+    link: /guide/sillytavern/faq
   - text: 关于作者
-    link: /about
+    link: /guide/about
 ---
 
 # 常见问题（FAQ）
