@@ -27,6 +27,9 @@ const images = [
   { src: '/preview1.jpg', alt: '预览1' },
   { src: '/preview2.jpg', alt: '预览2' },
   { src: '/preview3.jpg', alt: '预览3' },
+  { src: '/preview4.jpg', alt: '预览4' },
+  { src: '/preview5.jpg', alt: '预览5' },
+  { src: '/preview6.jpg', alt: '预览6' },
 ];
 </script>
 
