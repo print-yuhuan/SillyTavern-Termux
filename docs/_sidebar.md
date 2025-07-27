@@ -1,3 +1,0 @@
-- [首页](README.md)
-- [快速开始](quickstart.md)
-- [常见问题](faq.md)

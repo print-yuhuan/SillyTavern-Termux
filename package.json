@@ -1,0 +1,27 @@
+{
+  "name": "sillytavern-termux",
+  "version": "1.0.0",
+  "description": "[![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=social&label=Star)](https://github.com/print-yuhuan/SillyTavern-Termux) [![License](https://img.shields.io/badge/License-Custom-blue.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE) [![Version](https://img.shields.io/badge/Version-2025.07.25-brightgreen.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh) [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg)](https://termux.dev/cn/index.html) [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue)](https://qm.qq.com/q/Z1kk7tCrcG)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/print-yuhuan/SillyTavern-Termux.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/print-yuhuan/SillyTavern-Termux/issues"
+  },
+  "homepage": "https://github.com/print-yuhuan/SillyTavern-Termux#readme",
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  },
+  "dependencies": {
+    "swiper": "^11.2.10"
+  }
+}
