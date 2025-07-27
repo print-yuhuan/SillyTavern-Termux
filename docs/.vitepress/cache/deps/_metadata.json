@@ -1,0 +1,46 @@
+{
+  "hash": "cb7a5b13",
+  "configHash": "bc67800a",
+  "lockfileHash": "9a39077d",
+  "browserHash": "e07fa775",
+  "optimized": {
+    "vue": {
+      "src": "../../../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "a2d8e4f4",
+      "needsInterop": false
+    },
+    "vitepress > @vue/devtools-api": {
+      "src": "../../../../node_modules/@vue/devtools-api/dist/index.js",
+      "file": "vitepress___@vue_devtools-api.js",
+      "fileHash": "003b841d",
+      "needsInterop": false
+    },
+    "vitepress > @vueuse/core": {
+      "src": "../../../../node_modules/@vueuse/core/index.mjs",
+      "file": "vitepress___@vueuse_core.js",
+      "fileHash": "8b4fa3a2",
+      "needsInterop": false
+    },
+    "swiper/vue": {
+      "src": "../../../../node_modules/swiper/swiper-vue.mjs",
+      "file": "swiper_vue.js",
+      "fileHash": "48dc2a9e",
+      "needsInterop": false
+    },
+    "swiper/modules": {
+      "src": "../../../../node_modules/swiper/modules/index.mjs",
+      "file": "swiper_modules.js",
+      "fileHash": "34ead605",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-37N2EZQT": {
+      "file": "chunk-37N2EZQT.js"
+    },
+    "chunk-HVR2FF6M": {
+      "file": "chunk-HVR2FF6M.js"
+    }
+  }
+}
