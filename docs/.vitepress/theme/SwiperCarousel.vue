@@ -23,13 +23,14 @@ import { Autoplay, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+const base = import.meta.env.BASE_URL; // 自动获取 base
 const images = [
-  { src: '/preview1.jpg', alt: '预览1' },
-  { src: '/preview2.jpg', alt: '预览2' },
-  { src: '/preview3.jpg', alt: '预览3' },
-  { src: '/preview4.jpg', alt: '预览4' },
-  { src: '/preview5.jpg', alt: '预览5' },
-  { src: '/preview6.jpg', alt: '预览6' },
+  { src: `${base}preview1.jpg`, alt: '预览1' },
+  { src: `${base}preview2.jpg`, alt: '预览2' },
+  { src: `${base}preview3.jpg`, alt: '预览3' },
+  { src: `${base}preview4.jpg`, alt: '预览4' },
+  { src: `${base}preview5.jpg`, alt: '预览5' },
+  { src: `${base}preview6.jpg`, alt: '预览6' },
 ];
 </script>
 

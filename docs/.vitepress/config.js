@@ -1,6 +1,7 @@
 export default {
+  base: process.env.VITEPRESS_BASE || '/SillyTavern-Termux/', // 优先使用环境变量，否则默认GitHub仓库名
   themeConfig: {
-    siteTitle: 'SillyTavern-Termux', // 顶栏站点标题
+    siteTitle: 'SillyTavern-Termux',
     nav: [
       { text: '主页', link: '/' },
       { text: '开始', link: '/guide/quickstart' }

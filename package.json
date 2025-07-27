@@ -4,7 +4,11 @@
   "description": "[![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=social&label=Star)](https://github.com/print-yuhuan/SillyTavern-Termux) [![License](https://img.shields.io/badge/License-Custom-blue.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE) [![Version](https://img.shields.io/badge/Version-2025.07.25-brightgreen.svg)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh) [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg)](https://termux.dev/cn/index.html) [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue)](https://qm.qq.com/q/Z1kk7tCrcG)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "docs:dev": "vitepress dev docs",
+  "docs:build:gh": "VITEPRESS_BASE=/SillyTavern-Termux/ vitepress build docs",
+  "docs:build:custom": "VITEPRESS_BASE=/ vitepress build docs",
+  "docs:deploy": "gh-pages -d docs/.vitepress/dist",
+  "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -19,6 +23,7 @@
   },
   "homepage": "https://github.com/print-yuhuan/SillyTavern-Termux#readme",
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "vitepress": "^1.6.3"
   },
   "dependencies": {
