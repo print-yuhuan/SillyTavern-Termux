@@ -121,7 +121,7 @@ tavern_config_menu() {
         echo -e "${BLUE}${BOLD}2. 修改内存限制${NC}"
         echo -e "${MAGENTA}${BOLD}3. 恢复启动文件${NC}"
         echo -e "${RED}${BOLD}4. 恢复配置文件${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -e "${CYAN}${BOLD}====================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 config_choice; echo
 
@@ -203,7 +203,7 @@ lan_config_menu() {
         echo -e "${RED}${BOLD}2. 关闭网络监听${NC}"
         echo -e "${BLUE}${BOLD}3. 获取内网地址${NC}"
         echo -e "${MAGENTA}${BOLD}4. 内网连接帮助${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 lan_choice; echo
         case "$lan_choice" in
