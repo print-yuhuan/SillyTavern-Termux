@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20250730
+INSTALL_VERSION=20250731
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -185,7 +185,7 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 rm -rf node_modules
 export NODE_ENV=production
-if ! npm install --no-audit --no-fund --loglevel=error --no-progress --omit=dev; then
+if ! npm install --no-audit --no-fund --loglevel=error --omit=dev; then
     echo -e "${RED}${BOLD}>> 依赖安装失败，请检查网络连接或日志信息。${NC}"
     exit 1
 fi

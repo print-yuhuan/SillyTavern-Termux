@@ -17,24 +17,44 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250730
-UPDATE_DATE="2025-07-30"
+MENU_VERSION=20250731
+UPDATE_DATE="2025-07-31"
 UPDATE_CONTENT="
-1. 全面重构安装与菜单脚本，统一注释与交互风格，提升可读性与美观度。
-2. 增强依赖检测与修复逻辑，自动补全缺失组件（git、curl、zip、unzip、nodejs等）。
-3. 新增主菜单模块：系统维护、脚本管理、插件管理，结构更清晰。
-4. 支持插件一键安装与卸载，附详细功能介绍与安全提示。
-5. 实现脚本自更新，远程同步版本号，自动重载菜单。
-6. 自动配置终端字体，优化界面显示效果。
-7. 所有菜单与提示信息采用统一色彩与加粗高亮，提升交互体验。
-8. 关于脚本菜单支持作者信息、加群交流、邮件反馈，支持自动调起相关应用。
-9. 系统维护模块支持一键导出/导入酒馆数据和本体，自动扫描下载目录备份，交互式选择与安全恢复，具备覆盖警告与二次确认。
-10. 支持依赖版本检测与一键修复。
-11. 支持一键卸载酒馆及相关脚本配置，彻底清理环境。
-12. 所有操作均有详细进度与友好反馈，提升易用性与安全性。
-13. 关于脚本菜单新增“资源获取”子菜单，支持：
-    - 应用安装：一键下载并自动安装 Discord 客户端，下载进度可视化，支持断点续传。
-    - 酒馆社群：一键直达五大 Discord 社群频道（酒馆、类脑、旅程、言庭、桃源）。
+===============================================
+SillyTavern-Termux 综合更新日志 2025-07-31
+===============================================
+
+本次更新涵盖 Install.sh 与 Menu.sh 两大脚本，重点提升安装体验、功能丰富性与界面美观性。
+
+───────────────────────────────────────────────
+【Install.sh 安装优化】
+───────────────────────────────────────────────
+  ● 改进依赖安装体验：
+      - 移除 npm 安装时的 “--no-progress” 参数。
+      - 现在安装依赖时会显示实时进度条，用户可直观看到进度，避免误判卡死。
+
+───────────────────────────────────────────────
+【Menu.sh 功能与体验升级】
+───────────────────────────────────────────────
+  ★ 功能新增
+    • 新增「自定模型」插件
+        - 入口：“插件安装”菜单
+        - 作用：为 OpenAI、Claude、Gemini 等连接方式添加自定义模型名称，模型管理更灵活。
+    • 新增「局域网配置」子菜单
+        - 整合原有网络监听开关
+        - 新增两项实用功能：
+            ▸ 获取内网地址：自动检测并显示设备局域网IP，方便其他设备访问。
+            ▸ 内网连接帮助：详尽文本指南+常见问题解答，轻松解决连接难题。
+
+  ★ 优化改进
+    • 插件卸载体验提升
+        - 卸载列表显示插件中文名称（如“酒馆助手”），替代英文目录名，直观易懂。
+
+  ★ 文本润色
+    • 插件安装界面美化
+        - “酒馆助手”“记忆表格”等插件介绍重写，采用清晰排版和项目符号，突出核心功能与亮点。
+
+===============================================
 "
 REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
@@ -95,48 +115,20 @@ update_tavern() {
 tavern_config_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 酒馆配置 ====${NC}"
+        echo -e "${CYAN}${BOLD}===== 酒馆配置 =====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${GREEN}${BOLD}1. 开启网络监听${NC}"
-        echo -e "${RED}${BOLD}2. 关闭网络监听${NC}"
-        echo -e "${BLUE}${BOLD}3. 修改内存限制${NC}"
-        echo -e "${BRIGHT_MAGENTA}${BOLD}4. 恢复启动文件${NC}"
-        echo -e "${CYAN}${BOLD}5. 恢复配置文件${NC}"
+        echo -e "${GREEN}${BOLD}1. 局域网配置项${NC}"
+        echo -e "${BLUE}${BOLD}2. 修改内存限制${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 恢复启动文件${NC}"
+        echo -e "${RED}${BOLD}4. 恢复配置文件${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-5）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 config_choice; echo
 
         case "$config_choice" in
             0) break ;;
-            1)
-                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
-                if [ ! -f config.yaml ]; then
-                    echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法开启监听。${NC}"
-                    press_any_key; continue
-                fi
-                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
-                sed -i 's/^listen: false$/listen: true/' config.yaml
-                sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' config.yaml
-                sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' config.yaml
-                sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' config.yaml
-                echo -e "${GREEN}${BOLD}>> 网络监听已开启，允许外部设备访问。${NC}"
-                press_any_key
-                ;;
+            1) lan_config_menu ;;
             2)
-                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
-                if [ ! -f config.yaml ]; then
-                    echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法关闭监听。${NC}"
-                    press_any_key; continue
-                fi
-                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
-                sed -i 's/^listen: true$/listen: false/' config.yaml
-                sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' config.yaml
-                sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' config.yaml
-                sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' config.yaml
-                echo -e "${RED}${BOLD}>> 网络监听已关闭，仅限本机访问。${NC}"
-                press_any_key
-                ;;
-            3)
                 cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
                 if [ ! -f start.sh ]; then
                     echo -e "${RED}${BOLD}>> [错误] 未找到 start.sh 文件，无法修改内存限制。${NC}"
@@ -175,7 +167,7 @@ tavern_config_menu() {
                 fi
                 press_any_key
                 ;;
-            4)
+            3)
                 cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
                 if [ ! -f start.sh.bak ]; then
                     echo -e "${MAGENTA}${BOLD}>> 未找到 start.sh.bak 备份文件，无法恢复。${NC}"
@@ -185,7 +177,7 @@ tavern_config_menu() {
                 echo -e "${YELLOW}${BOLD}>> 启动文件已恢复为初始版本。${NC}"
                 press_any_key
                 ;;
-            5)
+            4)
                 cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
                 if [ ! -f config.yaml.bak ]; then
                     echo -e "${BRIGHT_MAGENTA}${BOLD}>> 未找到 config.yaml.bak 备份文件，无法恢复。${NC}"
@@ -202,6 +194,113 @@ tavern_config_menu() {
     done
 }
 
+lan_config_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 局域网配置项 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 开启网络监听${NC}"
+        echo -e "${RED}${BOLD}2. 关闭网络监听${NC}"
+        echo -e "${BLUE}${BOLD}3. 获取内网地址${NC}"
+        echo -e "${MAGENTA}${BOLD}4. 内网连接帮助${NC}"
+        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
+        read -n1 lan_choice; echo
+        case "$lan_choice" in
+            0) break ;;
+            1)
+                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
+                if [ ! -f config.yaml ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法开启监听。${NC}"
+                    press_any_key; continue
+                fi
+                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
+                sed -i 's/^listen: false$/listen: true/' config.yaml
+                sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' config.yaml
+                sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' config.yaml
+                sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' config.yaml
+                echo -e "${GREEN}${BOLD}>> 网络监听已开启，允许外部设备访问。${NC}"
+                press_any_key
+                ;;
+            2)
+                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
+                if [ ! -f config.yaml ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法关闭监听。${NC}"
+                    press_any_key; continue
+                fi
+                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
+                sed -i 's/^listen: true$/listen: false/' config.yaml
+                sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' config.yaml
+                sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' config.yaml
+                sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' config.yaml
+                echo -e "${RED}${BOLD}>> 网络监听已关闭，仅限本机访问。${NC}"
+                press_any_key
+                ;;
+            3)
+                ip_found=0
+                for i in $(seq 0 5); do
+                    ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{print $2}' | head -n1)
+                    if [ -n "$ip" ]; then
+                        echo -e "${CYAN}=================================================${NC}"
+                        echo -e "请在局域网内的其他设备浏览器中访问："
+                        echo -e "${GREEN}${BOLD}http://$ip:8000/${NC}"
+                        echo -e "${CYAN}=================================================${NC}"
+                        ip_found=1
+                        break
+                    fi
+                done
+                if [ "$ip_found" -eq 0 ]; then
+                    echo -e "${YELLOW}${BOLD}未检测到可用的 wlan 接口IP。${NC}"
+                    echo -e "${RED}${BOLD}请确保本机已连接WiFi，并重试。${NC}"
+                fi
+                press_any_key
+                ;;
+            4)
+                echo -e "${CYAN}${BOLD}==================================================${NC}"
+                echo -e "${CYAN}${BOLD}SillyTavern 局域网连接指南${NC}"
+                echo -e "${CYAN}${BOLD}==================================================${NC}\n"
+
+                echo -e "${CYAN}${BOLD}一、准备工作${NC}"
+                echo -e "  1. 确保 SillyTavern 已正确安装。"
+                echo -e "  2. 本机（运行 SillyTavern）和其它访问设备（手机、电脑、平板等）需连接同一局域网（如同一个WiFi或一个热点）。\n"
+
+                echo -e "${CYAN}${BOLD}二、操作顺序建议${NC}"
+                echo -e "  ${BOLD}1. 开启网络监听（如已开启可跳过）${NC}"
+                echo -e "    - 仅首次设置或曾关闭时需执行。\n"
+                echo -e "  ${BOLD}2. 获取内网地址（如已知且无变动可跳过）${NC}"
+                echo -e "    - 若设备重启、WiFi重连、网络切换，内网IP可能变动，需重新获取。\n"
+                echo -e "  ${BOLD}3. 启动酒馆服务${NC}"
+                echo -e "    - 返回主菜单，选择“启动酒馆”，务必保持终端窗口运行。\n"
+                echo -e "  ${BOLD}4. 其他设备访问${NC}"
+                echo -e "    - 在同网络下的手机、电脑等浏览器输入上一步获取的网址访问 SillyTavern。\n"
+
+                echo -e "${CYAN}${BOLD}三、常见连接方式${NC}"
+                echo -e "${CYAN}--------------------------------------------------${NC}"
+                echo -e "${CYAN}${BOLD}方式一：两台设备连接同一WiFi/路由器${NC}"
+                echo -e "  - 本机和目标设备都连同一WiFi路由器。"
+                echo -e "  - 直接在浏览器输入 http://内网IP:8000/ 访问。\n"
+                echo -e "${CYAN}${BOLD}方式二：目标设备连接本机热点${NC}"
+                echo -e "  - 本机开启“个人热点”，目标设备连接该热点。"
+                echo -e "  - 浏览器输入 http://内网IP:8000/ 访问。\n"
+                echo -e "${CYAN}${BOLD}方式三：本机连接目标设备热点${NC}"
+                echo -e "  - 目标设备开启热点，本机连接该热点。"
+                echo -e "  - 浏览器输入 http://内网IP:8000/ 访问。\n"
+
+                echo -e "${CYAN}${BOLD}四、常见问题与提示${NC}"
+                echo -e "  · ${BOLD}获取不到内网IP：${NC} 请确认本机WiFi/热点已连接，可尝试断开重连。"
+                echo -e "  · ${BOLD}外部设备无法访问：${NC} 请确保网络监听已开启，且两台设备在同一局域网/热点。"
+                echo -e "  · ${BOLD}设备重启或网络切换：${NC} 需重新获取内网IP并用新地址访问。\n"
+
+                echo -e "${CYAN}${BOLD}==================================================${NC}"
+                press_any_key
+                ;;
+            *)
+                echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1
+                ;;
+        esac
+    done
+}
+
 # =========================================================================
 # 4. 酒馆插件
 # =========================================================================
@@ -210,34 +309,35 @@ plugin_install_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${MAGENTA}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
+        echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
         echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化记忆）${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 自定模型      ${CYAN}${BOLD}（自定义模型）${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-2）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
         read -n1 plugin_choice; echo
         case "$plugin_choice" in
             0) break ;;
             1)
                 clear
-                echo -e "${MAGENTA}${BOLD}==== 酒馆助手 ====${NC}"
-                echo -e "${YELLOW}${BOLD}仓库：${NC}https://github.com/N0VI028/JS-Slash-Runner"
-                echo -e "${CYAN}${BOLD}功能简介：${NC}
-酒馆助手是为 SillyTavern 设计的多功能扩展插件，支持在对话中渲染各种交互式前端界面，实现与 SillyTavern 的深度交互，并可作为中间层连接外部应用程序，极大丰富了对话体验和扩展能力。
-"
-                echo -e "${CYAN}${BOLD}主要特性：${NC}
-  - 支持在对话中创建从简单按钮到小游戏等丰富的交互元素
-  - 可用 jQuery 操作 SillyTavern 的 DOM，灵活修改样式、绑定事件等
-  - 作为后端中转，实现与外部应用的数据交换和功能联动
-  - 通过 iframe 隔离运行外部 JavaScript 脚本，突破 SillyTavern 默认限制
-"
-                echo -e "${YELLOW}${BOLD}安全提示：${NC}
-  - 插件允许执行自定义 JavaScript 代码，存在一定安全风险
-  - 恶意脚本可能窃取 API 密钥、聊天记录等敏感信息，或破坏设置
-  - 请务必核查脚本来源和内容，确保安全可信后再运行
-"
-                echo -e "${CYAN}${BOLD}插件作者信息：                                          插件名称：酒馆助手${NC}"
-                echo -e "${GREEN}${BOLD}作者：KAKAA、青空莉想做舞台少女的狗${NC}"
-                echo -e "${MAGENTA}${BOLD}© 2025 N0VI028. 保留所有权利。${NC}"
+                echo -e "${GREEN}${BOLD}====== 酒馆助手 ======${NC}\n"
+                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/N0VI028/JS-Slash-Runner\n"
+                echo -e "${CYAN}${BOLD}插件简介：${NC}"
+                echo -e "${GREEN}· 酒馆助手是一款专为 SillyTavern 打造的多功能扩展插件，带来前所未有的交互体验"
+                echo -e "· 支持对话中渲染多样交互元素，从简单按钮到自定义游戏界面应有尽有"
+                echo -e "· 可使用 jQuery 操作 SillyTavern DOM，自由修改样式与事件绑定"
+                echo -e "· 作为后端中转，轻松联动外部应用，实现数据交换与能力扩展${NC}\n"
+                echo -e "${BLUE}${BOLD}核心亮点：${NC}"
+                echo -e "${WHITE}- 灵活丰富的前端交互，极大提升对话玩法"
+                echo -e "- 连接外部世界，让 SillyTavern 变得更强大"
+                echo -e "- 支持通过 iframe 隔离安全运行自定义 JS 脚本${NC}\n"
+                echo -e "${YELLOW}${BOLD}安全提示：${NC}"
+                echo -e "${WHITE}· 插件支持执行自定义 JavaScript 脚本，存在一定安全风险。"
+                echo -e "· 恶意脚本可能窃取 API 密钥、聊天记录，或篡改设置。"
+                echo -e "· 请仅运行来源可信、内容可控的脚本，务必理解其功能和影响。"
+                echo -e "· 因第三方脚本带来的任何损失，插件及作者概不负责。${NC}\n"
+                echo -e "${CYAN}${BOLD}插件名称：酒馆助手${NC}"
+                echo -e "${GREEN}${BOLD}开发作者：KAKAA、青空莉想做舞台少女的狗${NC}"
+                echo -e "${MAGENTA}${BOLD}© 2025 N0VI028. 保留所有权利。${NC}\n"
                 echo -ne "${YELLOW}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
                 read -n1 ans; echo
                 if [[ "$ans" =~ [yY] ]]; then
@@ -254,29 +354,26 @@ plugin_install_menu() {
                 ;;
             2)
                 clear
-                echo -e "${BLUE}${BOLD}==== 记忆表格 ====${NC}"
-                echo -e "${YELLOW}${BOLD}仓库：${NC}https://github.com/muyoou/st-memory-enhancement"
-                echo -e "${CYAN}${BOLD}功能简介：${NC}
-记忆增强插件专为 SillyTavern 酒馆打造，注入结构化长期记忆能力，支持角色设定、关键事件、重要物品等自定义内容，帮助 AI 更好地理解和记住对话上下文，使推演更连贯、更贴合情境。
-"
-                echo -e "${CYAN}${BOLD}主要特性：${NC}
-  - 通过直观表格轻松查看、编辑和管理 AI 记忆
-  - 支持导出、分享与自定义 JSON 表格结构，满足多样创作需求
-  - 结构化记忆储存，未来支持节点编辑器和多模板管理
-  - 智能提示词自动生成与注入，深度集成世界书或预设
-  - 表格内容可推送至聊天界面，支持自定义样式
-  - 丰富的自定义导出和分享选项，便捷配置管理
-  - 未来支持分步任务与主副 API 智能分配，高效管理长期记忆
-"
-                echo -e "${YELLOW}${BOLD}使用说明：${NC}
-  - 插件仅在 SillyTavern 的“聊天补全模式”下工作
-"
-                echo -e "${CYAN}${BOLD}插件作者信息：                                          插件名称：记忆表格${NC}"
-                echo -e "${GREEN}${BOLD}作者：木悠${NC}"
-                echo -e "${GREEN}${BOLD}插件交流Q群：${NC}"
-                echo -e "${GREEN}${BOLD}一群：1030109849${NC}"
-                echo -e "${GREEN}${BOLD}二群：1045423946${NC}"
-                echo -e "${MAGENTA}${BOLD}© 2025 muyoou. 保留所有权利。${NC}"
+                echo -e "${BLUE}${BOLD}====== 记忆表格 ======${NC}\n"
+                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/muyoou/st-memory-enhancement\n"
+                echo -e "${CYAN}${BOLD}插件简介：${NC}"
+                echo -e "${WHITE}✨ 记忆表格插件为 SillyTavern 注入强大的结构化长期记忆，助您在角色扮演场景中，实现更真实与连贯的 AI 推演。"
+                echo -e "支持对角色设定、关键事件、重要物品等内容的自定义管理，显著提升记忆和情境还原。${NC}\n"
+                echo -e "${BLUE}${BOLD}核心优势：${NC}"
+                echo -e "${GREEN}😊 用户友好：通过直观表格轻松查看与编辑，全面掌控角色记忆"
+                echo -e "🛠️ 创作者友好：灵活导出/分享配置，JSON 文件自定义结构，满足多样创作"
+                echo -e "📅 结构化存储：强大表格系统，未来支持节点编辑器和多模板管理"
+                echo -e "🤖 智能提示词：自动生成并注入提示词，深度集成世界书或预设"
+                echo -e "🖼️ 数据推送：表格内容可推送至聊天界面，支持自定义展示样式"
+                echo -e "📦 便捷导出：丰富自定义选项，支持模板导出与分享"
+                echo -e "🚀 分步操作：结合主副 API，智能分配任务，高效管理长期记忆${NC}\n"
+                echo -e "${YELLOW}${BOLD}使用须知：${NC}"
+                echo -e "${WHITE}· 插件仅适用于 SillyTavern 的“聊天补全模式”"
+                echo -e "· 插件界面简洁直观，上手快速，适合所有用户${NC}\n"
+                echo -e "${CYAN}${BOLD}插件名称：记忆表格${NC}"
+                echo -e "${GREEN}${BOLD}开发作者：木悠${NC}"
+                echo -e "${YELLOW}${BOLD}插件交流群：1030109849 / 1045423946${NC}"
+                echo -e "${MAGENTA}${BOLD}© 2025 muyoou. 保留所有权利。${NC}\n"
                 echo -ne "${YELLOW}${BOLD}是否安装记忆表格？(y/n)：${NC}"
                 read -n1 ans; echo
                 if [[ "$ans" =~ [yY] ]]; then
@@ -291,6 +388,33 @@ plugin_install_menu() {
                     press_any_key
                 fi
                 ;;
+            3)
+                clear
+                echo -e "${MAGENTA}${BOLD}====== 自定模型 ======${NC}\n"
+                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/LenAnderson/SillyTavern-CustomModels\n"
+                echo -e "${CYAN}${BOLD}插件简介：${NC}"
+                echo -e "${WHITE}自定模型插件可为 SillyTavern 的 OpenAI、Claude 及 Google/Gemini 连接添加自定义模型名称，让您轻松扩展与管理各类模型，对话体验更加灵活丰富。${NC}\n"
+                echo -e "${BLUE}${BOLD}主要特性：${NC}"
+                echo -e "${GREEN}· 支持用户自定义添加和切换模型名称"
+                echo -e "· 兼容 OpenAI、Claude、Google/Gemini 多种对接方式"
+                echo -e "· 简化模型管理，满足多样需求，自由扩展 AI 能力${NC}\n"
+                echo -e "${CYAN}${BOLD}插件名称：自定模型${NC}"
+                echo -e "${GREEN}${BOLD}开发作者：LenAnderson${NC}"
+                echo -e "${MAGENTA}${BOLD}© 2025 LenAnderson. 保留所有权利。${NC}\n"
+                echo -ne "${YELLOW}${BOLD}是否安装自定模型？(y/n)：${NC}"
+                read -n1 ans; echo
+                if [[ "$ans" =~ [yY] ]]; then
+                    PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/SillyTavern-CustomModels"
+                    if [ -d "$PLUGIN_DIR" ]; then
+                        echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
+                    else
+                        git clone https://github.com/LenAnderson/SillyTavern-CustomModels "$PLUGIN_DIR" \
+                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
+                            || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
+                    fi
+                    press_any_key
+                fi
+                ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
@@ -298,6 +422,11 @@ plugin_install_menu() {
 
 plugin_uninstall_menu() {
     local PLUGIN_ROOT="$HOME/SillyTavern/public/scripts/extensions/third-party"
+    declare -A plugin_name_map=(
+        [JS-Slash-Runner]="酒馆助手"
+        [st-memory-enhancement]="记忆表格"
+        [SillyTavern-CustomModels]="自定模型"
+    )
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 插件卸载 ====${NC}"
@@ -312,8 +441,9 @@ plugin_uninstall_menu() {
             press_any_key; break
         fi
         for i in "${!plugin_dirs[@]}"; do
-            plugin_name=$(basename "${plugin_dirs[$i]}")
-            echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${plugin_name}${NC}"
+            raw_name=$(basename "${plugin_dirs[$i]}")
+            zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
+            echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${zh_name}${NC}"
         done
         echo -e "${CYAN}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
         read -r idx
@@ -321,12 +451,13 @@ plugin_uninstall_menu() {
             break
         fi
         if [[ "$idx" =~ ^[1-9][0-9]*$ ]] && [ "$idx" -le "${#plugin_dirs[@]}" ]; then
-            plugin_name=$(basename "${plugin_dirs[$((idx-1))]}")
-            echo -ne "${YELLOW}${BOLD}是否卸载 ${plugin_name}？(y/n)：${NC}"
+            raw_name=$(basename "${plugin_dirs[$((idx-1))]}")
+            zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
+            echo -ne "${YELLOW}${BOLD}是否卸载 ${zh_name}？(y/n)：${NC}"
             read -n1 ans; echo
             if [[ "$ans" =~ [yY] ]]; then
                 rm -rf "${plugin_dirs[$((idx-1))]}"
-                echo -e "${GREEN}${BOLD}>> 插件 ${plugin_name} 已卸载。${NC}"
+                echo -e "${GREEN}${BOLD}>> 插件 ${zh_name} 已卸载。${NC}"
             else
                 echo -e "${YELLOW}${BOLD}>> 已取消卸载。${NC}"
             fi
@@ -343,8 +474,8 @@ plugin_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 酒馆插件 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${MAGENTA}${BOLD}1. 安装插件${NC}"
-        echo -e "${BLUE}${BOLD}2. 卸载插件${NC}"
+        echo -e "${GREEN}${BOLD}1. 安装插件${NC}"
+        echo -e "${RED}${BOLD}2. 卸载插件${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-2）：${NC}"
         read -n1 sub_choice; echo

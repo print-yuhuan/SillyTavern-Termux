@@ -13,6 +13,7 @@ cd SillyTavern-Termux
 
 npm install
 
+# 启动开发测试运行：
 npm run docs:dev
 
 # 发布到 GitHub Pages：
