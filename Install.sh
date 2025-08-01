@@ -185,6 +185,7 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 rm -rf node_modules
 export NODE_ENV=production
+echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
 if ! npm install --no-audit --no-fund --loglevel=error --omit=dev; then
     echo -e "${RED}${BOLD}>> 依赖安装失败，请检查网络连接或日志信息。${NC}"
     exit 1
