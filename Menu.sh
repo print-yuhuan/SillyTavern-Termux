@@ -582,7 +582,7 @@ import_tavern_data() {
             fname=$(basename "${backup_files[$i]}")
             echo -e "${GREEN}${BOLD}$((i+1)). $fname${NC}"
         done
-        echo -e "${CYAN}${BOLD}=====================${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
         read -r idx
         if [[ "$idx" == "0" ]]; then
@@ -642,7 +642,7 @@ import_tavern_full() {
             fname=$(basename "${backup_files[$i]}")
             echo -e "${GREEN}${BOLD}$((i+1)). $fname${NC}"
         done
-        echo -e "${CYAN}${BOLD}=====================${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
         read -r idx
         if [[ "$idx" == "0" ]]; then
