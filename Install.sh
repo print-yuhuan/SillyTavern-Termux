@@ -156,9 +156,9 @@ source "$ENV_PATH"
 echo -e "${GREEN}${BOLD}>> 步骤 6/8 完成：菜单脚本与配置文件已就绪。${NC}"
 
 # =========================================================================
-# 步骤 7/8：配置自动启动菜单
+# 步骤 7/8：配置菜单自启动
 # =========================================================================
-echo -e "\n${CYAN}${BOLD}==== 步骤 7/8：配置自动启动菜单 ====${NC}"
+echo -e "\n${CYAN}${BOLD}==== 步骤 7/8：配置菜单自启动 ====${NC}"
 PROFILE_FILE=""
 for pf in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
     if [ -f "$pf" ]; then
@@ -171,11 +171,15 @@ if [ -z "$PROFILE_FILE" ]; then
 fi
 touch "$PROFILE_FILE"
 if ! grep -qE 'bash[ ]+\$HOME/Menu\.sh' "$PROFILE_FILE"; then
+    if [ -s "$PROFILE_FILE" ]; then
+        echo '' >> "$PROFILE_FILE"
+    fi
+    echo '# SillyTavern Termux 菜单自启动' >> "$PROFILE_FILE"
     echo 'bash $HOME/Menu.sh' >> "$PROFILE_FILE"
-    echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置自动启动菜单。${NC}"
+    echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置菜单自启动。${NC}"
 else
-    echo -e "${YELLOW}${BOLD}>> 自动启动菜单已配置，跳过。${NC}"
-    echo -e "${YELLOW}${BOLD}>> 步骤 7/8 跳过：自动启动已存在。${NC}"
+    echo -e "${YELLOW}${BOLD}>> 菜单自启动已配置，跳过。${NC}"
+    echo -e "${YELLOW}${BOLD}>> 步骤 7/8 跳过：菜单自启动已存在。${NC}"
 fi
 
 # =========================================================================
