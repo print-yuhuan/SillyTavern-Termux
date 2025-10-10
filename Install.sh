@@ -189,12 +189,38 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 rm -rf node_modules
 export NODE_ENV=production
-echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
-if ! npm install --no-audit --no-fund --loglevel=error --omit=dev; then
-    echo -e "${RED}${BOLD}>> 依赖安装失败，请检查网络连接或日志信息。${NC}"
+
+retry_count=0
+max_retries=3
+install_success=0
+
+while [ $retry_count -lt $max_retries ]; do
+    if [ $retry_count -eq 0 ]; then
+        echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
+    else
+        echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
+    fi
+
+    if npm install --no-audit --no-fund --loglevel=error --omit=dev; then
+        install_success=1
+        break
+    else
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
+            rm -f package-lock.json
+            rm -rf node_modules
+            sleep 2
+        fi
+    fi
+done
+
+if [ $install_success -eq 1 ]; then
+    echo -e "${GREEN}${BOLD}>> 步骤 8/8 完成：SillyTavern 依赖已安装。${NC}"
+else
+    echo -e "${RED}${BOLD}>> 依赖安装失败，已重试 $max_retries 次，请检查网络连接或日志信息。${NC}"
     exit 1
 fi
-echo -e "${GREEN}${BOLD}>> 步骤 8/8 完成：SillyTavern 依赖已安装。${NC}"
 
 # =========================================================================
 # 安装完成，进入主菜单
