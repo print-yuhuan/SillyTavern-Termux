@@ -17,42 +17,83 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20250731
-UPDATE_DATE="2025-07-31"
+MENU_VERSION=20251012
+UPDATE_DATE="2025-10-12"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 综合更新日志 2025-07-31
+SillyTavern-Termux 更新日志 2025-10-12
 ===============================================
 
-本次更新涵盖 Install.sh 与 Menu.sh 两大脚本，重点提升安装体验、功能丰富性与界面美观性。
+本次更新重点优化备份/恢复功能，提升数据管理体验和安全性。
 
 ───────────────────────────────────────────────
-【Install.sh 安装优化】
+【核心功能优化】
 ───────────────────────────────────────────────
-  ● 改进依赖安装体验：
-      - 移除 npm 安装时的 “--no-progress” 参数。
-      - 现在安装依赖时会显示实时进度条，用户可直观看到进度，避免误判卡死。
+  ★ 备份存储位置变更
+    • 备份目录统一调整
+        - 原路径：/storage/emulated/0/Download/
+        - 新路径：/storage/emulated/0/SillyTavern/
+        - 优势：独立备份目录，避免与其他下载文件混杂，便于管理
+
+  ★ 智能权限管理机制
+    • 新增存储权限检测函数 (check_storage_permission)
+        - 导出/导入前自动检测存储权限
+        - 未授权时自动弹窗申请权限
+        - 等待用户授权（最长15秒）
+        - 权限获取失败时友好提示并终止操作
+    • 适用范围：
+        - 导出酒馆数据
+        - 导出酒馆本体
+        - 导入酒馆数据
+        - 导入酒馆本体
+
+  ★ 自动目录管理
+    • 导出操作：
+        - 自动检测备份目录是否存在
+        - 不存在则自动创建 /storage/emulated/0/SillyTavern/
+        - 创建失败时给出明确提示
+    • 导入操作：
+        - 验证备份目录是否存在
+        - 不存在时提示用户正确放置文件路径
+        - 避免误导和操作失败
 
 ───────────────────────────────────────────────
-【Menu.sh 功能与体验升级】
+【用户体验提升】
 ───────────────────────────────────────────────
-  ★ 功能新增
-    • 新增「自定模型」插件
-        - 入口：“插件安装”菜单
-        - 作用：为 OpenAI、Claude、Gemini 等连接方式添加自定义模型名称，模型管理更灵活。
-    • 新增「局域网配置」子菜单
-        - 整合原有网络监听开关
-        - 新增两项实用功能：
-            ▸ 获取内网地址：自动检测并显示设备局域网IP，方便其他设备访问。
-            ▸ 内网连接帮助：详尽文本指南+常见问题解答，轻松解决连接难题。
+  ● 更清晰的操作提示
+      - 导出成功：\"已保存到 SillyTavern 文件夹\"
+      - 导入失败：\"请先将备份文件放入 /storage/emulated/0/SillyTavern/ 目录\"
 
-  ★ 优化改进
-    • 插件卸载体验提升
-        - 卸载列表显示插件中文名称（如“酒馆助手”），替代英文目录名，直观易懂。
+  ● 增强容错机制
+      - 权限申请超时或被拒绝时，操作自动终止，避免后续错误
+      - 目录创建失败时，给出明确的权限检查提示
 
-  ★ 文本润色
-    • 插件安装界面美化
-        - “酒馆助手”“记忆表格”等插件介绍重写，采用清晰排版和项目符号，突出核心功能与亮点。
+  ● 保持向下兼容
+      - 新版本自动识别新路径的备份文件
+      - 用户需手动将旧备份从 Download 移至 SillyTavern 目录
+
+───────────────────────────────────────────────
+【技术改进】
+───────────────────────────────────────────────
+  ● 代码重构
+      - 提取权限检测逻辑为独立函数，提高代码复用性
+      - 统一四个备份/恢复函数的权限检测流程
+      - 优化错误处理和用户提示信息
+
+  ● 安全性增强
+      - 所有文件操作前强制检测存储权限
+      - 防止权限不足导致的数据丢失或操作失败
+
+───────────────────────────────────────────────
+【升级说明】
+───────────────────────────────────────────────
+  ⚠️ 重要提示：
+    1. 旧版本备份文件位于 /storage/emulated/0/Download/
+    2. 新版本备份文件保存至 /storage/emulated/0/SillyTavern/
+    3. 升级后建议：
+       - 手动将旧备份文件移动到新目录
+       - 或重新进行一次完整备份
+    4. 首次使用新版本时请允许存储权限申请
 
 ===============================================
 "
@@ -63,6 +104,35 @@ REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Term
 # ==== 通用函数 ====
 get_version() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2 | tr -d '\r'; }
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
+
+# ==== 存储权限检测函数 ====
+check_storage_permission() {
+    STORAGE_DIR="$HOME/storage/shared"
+    if [ ! -d "$STORAGE_DIR" ]; then
+        echo -e "${YELLOW}${BOLD}>> 未检测到存储权限，尝试自动获取...${NC}"
+        if ! command -v termux-setup-storage >/dev/null 2>&1; then
+            echo -e "${RED}${BOLD}>> 错误：'termux-setup-storage' 命令不存在，无法获取存储权限。${NC}"
+            return 1
+        else
+            termux-setup-storage
+            echo -e "${CYAN}${BOLD}>> 请在弹出的窗口中点击"允许"授权，正在等待授权结果...${NC}"
+            max_wait_time=15
+            for ((i=0; i<max_wait_time; i++)); do
+                [ -d "$STORAGE_DIR" ] && break
+                sleep 1
+            done
+            if [ ! -d "$STORAGE_DIR" ]; then
+                echo -e "${RED}${BOLD}>> 错误：存储权限获取超时或被拒绝，无法继续操作。${NC}"
+                return 1
+            else
+                echo -e "${GREEN}${BOLD}>> 存储权限已成功获取。${NC}"
+                return 0
+            fi
+        fi
+    else
+        return 0
+    fi
+}
 
 # =========================================================================
 # 1. 启动酒馆
@@ -600,6 +670,26 @@ fix_dependencies() {
 
 export_tavern_data() {
     echo -e "\n${CYAN}${BOLD}==== 导出酒馆数据 ====${NC}"
+
+    # 检测存储权限
+    if ! check_storage_permission; then
+        press_any_key
+        return
+    fi
+
+    # 检查并创建备份目录
+    BACKUP_DIR="/storage/emulated/0/SillyTavern"
+    if [ ! -d "$BACKUP_DIR" ]; then
+        echo -e "${YELLOW}${BOLD}>> 备份目录不存在，正在创建...${NC}"
+        if mkdir -p "$BACKUP_DIR" 2>/dev/null; then
+            echo -e "${GREEN}${BOLD}>> 备份目录创建成功。${NC}"
+        else
+            echo -e "${RED}${BOLD}>> 备份目录创建失败，请检查存储权限。${NC}"
+            press_any_key
+            return
+        fi
+    fi
+
     cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> SillyTavern 目录不存在，无法导出。${NC}"; press_any_key; return; }
     now=$(date +%Y%m%d_%H%M%S)
     if [ ! -d data ]; then
@@ -608,14 +698,34 @@ export_tavern_data() {
         return
     fi
     zip -r "SillyTavern-Data_${now}.zip" data
-    mv "SillyTavern-Data_${now}.zip" /storage/emulated/0/Download/ 2>/dev/null \
-        && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 下载 文件夹。${NC}" \
+    mv "SillyTavern-Data_${now}.zip" "$BACKUP_DIR/" 2>/dev/null \
+        && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 SillyTavern 文件夹。${NC}" \
         || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
     press_any_key
 }
 
 export_tavern_full() {
     echo -e "\n${CYAN}${BOLD}==== 导出酒馆本体 ====${NC}"
+
+    # 检测存储权限
+    if ! check_storage_permission; then
+        press_any_key
+        return
+    fi
+
+    # 检查并创建备份目录
+    BACKUP_DIR="/storage/emulated/0/SillyTavern"
+    if [ ! -d "$BACKUP_DIR" ]; then
+        echo -e "${YELLOW}${BOLD}>> 备份目录不存在，正在创建...${NC}"
+        if mkdir -p "$BACKUP_DIR" 2>/dev/null; then
+            echo -e "${GREEN}${BOLD}>> 备份目录创建成功。${NC}"
+        else
+            echo -e "${RED}${BOLD}>> 备份目录创建失败，请检查存储权限。${NC}"
+            press_any_key
+            return
+        fi
+    fi
+
     cd "$HOME" || { echo -e "${RED}${BOLD}>> HOME 目录不存在，无法导出。${NC}"; press_any_key; return; }
     if [ ! -d SillyTavern ]; then
         echo -e "${YELLOW}${BOLD}>> 未检测到 SillyTavern 目录，无本体可导出。${NC}"
@@ -624,23 +734,39 @@ export_tavern_full() {
     fi
     now=$(date +%Y%m%d_%H%M%S)
     zip -r "SillyTavern_${now}.zip" SillyTavern
-    mv "SillyTavern_${now}.zip" /storage/emulated/0/Download/ 2>/dev/null \
-        && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 下载 文件夹。${NC}" \
+    mv "SillyTavern_${now}.zip" "$BACKUP_DIR/" 2>/dev/null \
+        && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 SillyTavern 文件夹。${NC}" \
         || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
     press_any_key
 }
 
 import_tavern_data() {
     echo -e "\n${CYAN}${BOLD}==== 导入酒馆数据 ====${NC}"
+
+    # 检测存储权限
+    if ! check_storage_permission; then
+        press_any_key
+        return
+    fi
+
     if ! command -v unzip >/dev/null 2>&1; then
         echo -e "${RED}${BOLD}>> 检测到 unzip 未安装，请执行 pkg install unzip 后重试。${NC}"
         press_any_key; return
     fi
-    BACKUP_DIR="/storage/emulated/0/Download"
+
+    BACKUP_DIR="/storage/emulated/0/SillyTavern"
+    # 检查备份目录是否存在
+    if [ ! -d "$BACKUP_DIR" ]; then
+        echo -e "${YELLOW}${BOLD}>> 备份目录不存在。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 提示：请先将备份文件放入 /storage/emulated/0/SillyTavern/ 目录。${NC}"
+        press_any_key
+        return
+    fi
+
     PATTERN="SillyTavern-Data_*.zip"
     mapfile -t backup_files < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name "$PATTERN" 2>/dev/null | xargs -r ls -t 2>/dev/null)
     if [ ${#backup_files[@]} -eq 0 ]; then
-        echo -e "${YELLOW}${BOLD}>> 未在下载目录中检测到可用的备份文件。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 未在 SillyTavern 目录中检测到可用的备份文件。${NC}"
         press_any_key; return
     fi
     while true; do
@@ -692,15 +818,31 @@ import_tavern_data() {
 
 import_tavern_full() {
     echo -e "\n${CYAN}${BOLD}==== 导入酒馆本体 ====${NC}"
+
+    # 检测存储权限
+    if ! check_storage_permission; then
+        press_any_key
+        return
+    fi
+
     if ! command -v unzip >/dev/null 2>&1; then
         echo -e "${RED}${BOLD}>> 检测到 unzip 未安装，请执行 pkg install unzip 后重试。${NC}"
         press_any_key; return
     fi
-    BACKUP_DIR="/storage/emulated/0/Download"
+
+    BACKUP_DIR="/storage/emulated/0/SillyTavern"
+    # 检查备份目录是否存在
+    if [ ! -d "$BACKUP_DIR" ]; then
+        echo -e "${YELLOW}${BOLD}>> 备份目录不存在。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 提示：请先将备份文件放入 /storage/emulated/0/SillyTavern/ 目录。${NC}"
+        press_any_key
+        return
+    fi
+
     PATTERN="SillyTavern_*.zip"
     mapfile -t backup_files < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name "$PATTERN" 2>/dev/null | xargs -r ls -t 2>/dev/null)
     if [ ${#backup_files[@]} -eq 0 ]; then
-        echo -e "${YELLOW}${BOLD}>> 未在下载目录中检测到可用的备份文件。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 未在 SillyTavern 目录中检测到可用的备份文件。${NC}"
         press_any_key; return
     fi
     while true; do
