@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2025.10.12-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2025.10.18-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 
@@ -152,7 +152,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 | **2** | **🔄 更新酒馆** | 从官方仓库拉取最新代码，自动更新依赖包，支持版本比对和增量更新 |
 | **3** | **🔧 酒馆配置** | 局域网访问开关、内存限制调整、获取内网 IP、配置文件恢复 |
 | **4** | **🧩 酒馆插件** | 社区插件一键安装/卸载，含详细功能介绍和安全提示 |
-| **5** | **💾 系统维护** | 查看依赖版本、修复环境、备份/恢复用户数据和完整本体 |
+| **5** | **💾 系统维护** | 查看依赖版本、修复环境、备份/恢复用户数据和完整本体、**版本切换** |
 | **6** | **📦 脚本管理** | 检测脚本更新、在线升级、查看更新日志、一键彻底卸载 |
 | **7** | **ℹ️ 关于脚本** | 作者信息、QQ 群、邮件反馈、资源下载、社群链接 |
 
@@ -185,7 +185,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 | 备份类型 | 包含内容 | 使用场景 |
 |:--------|:--------|:--------|
-| **用户数据备份** | 角色卡、聊天记录、配置文件（`data` 目录） | 日常备份、数据迁移、设备更换 |
+| **用户数据备份** | 角色卡、聊天记录、配置文件（`data` 和 `public` 目录） | 日常备份、数据迁移、设备更换 |
 | **完整本体备份** | 整个 SillyTavern 目录（含插件和自定义修改） | 系统完整备份、环境迁移 |
 
 **备份文件存储位置**：`/storage/emulated/0/SillyTavern/`（手机"SillyTavern"文件夹）
@@ -194,6 +194,36 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 📂 导出前自动检测存储权限，未授权时自动申请
 - 📁 备份目录不存在时自动创建
 - 🔍 导入前验证备份目录和文件，提供清晰提示
+
+### 🔄 版本切换
+
+**支持灵活的版本管理：**
+
+通过 `5. 系统维护` → `7. 酒馆版本切换` 可以：
+
+**核心功能：**
+- 🏷️ **查看版本标签**：列出所有可用的 Git 标签版本，显示发布日期和当前版本
+- 🔀 **切换酒馆版本**：切换到任意已发布的标签版本，自动重新安装对应依赖
+- 📖 **版本切换帮助**：详细的使用指南、注意事项和常见问题解答
+
+**使用场景：**
+
+| 场景类型 | 适用情况 | 操作建议 |
+|:--------|:--------|:--------|
+| **稳定性需求** | 最新版本遇到问题 | 回退到上一个稳定版本 |
+| **兼容性测试** | 验证插件兼容性 | 切换到不同版本进行测试 |
+| **版本体验** | 体验历史功能 | 切换到特定版本探索 |
+
+**安全保障：**
+- ⚠️ 切换前自动检测未提交的更改
+- 🔒 二次确认机制防止误操作
+- 💾 建议切换前先备份数据
+- 🔄 支持通过"更新酒馆"回到最新 release 分支
+
+**智能依赖管理：**
+- 🔧 版本切换后自动清理旧依赖
+- ♻️ 三次重试机制确保依赖安装成功
+- 📦 失败时提供修复建议和指引
 
 ---
 
@@ -342,7 +372,38 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 </details>
 
 <details>
-<summary><b>Q10：脚本是否支持自定义配置？</b></summary>
+<summary><b>Q10：如何切换到旧版本的 SillyTavern？</b></summary>
+
+**A：** 使用版本切换功能：
+1. 进入主菜单，选择 `5. 系统维护`
+2. 选择 `7. 酒馆版本切换`
+3. 选择 `1. 查看版本标签` 浏览可用版本
+4. 选择 `2. 切换酒馆版本`，输入要切换的版本序号
+5. 确认后会自动切换版本并重新安装依赖
+
+⚠️ **注意事项**：
+- 切换前建议先备份数据
+- 切换版本会丢失未提交的文件修改
+- 需要良好的网络连接以安装依赖
+- 如需回到最新版本，使用"更新酒馆"功能
+</details>
+
+<details>
+<summary><b>Q11：版本切换后无法启动怎么办？</b></summary>
+
+**A：** 可能是依赖安装失败，尝试以下解决方案：
+1. 检查依赖是否安装成功（查看切换时的提示信息）
+2. 进入主菜单，选择 `5. 系统维护` → `2. 修复依赖环境`
+3. 修复完成后重新尝试启动
+4. 如果问题仍然存在，可以切换回其他稳定版本
+
+**预防措施**：
+- 切换版本前确保网络连接稳定
+- 耐心等待依赖安装完成，不要中断过程
+</details>
+
+<details>
+<summary><b>Q12：脚本是否支持自定义配置？</b></summary>
 
 **A：** 支持。高级用户可以通过以下方式自定义：
 - 编辑 `$HOME/.env` 文件修改环境变量

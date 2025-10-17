@@ -17,83 +17,121 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251012
-UPDATE_DATE="2025-10-12"
+MENU_VERSION=20251018
+UPDATE_DATE="2025-10-18"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-10-12
+SillyTavern-Termux 更新日志 2025-10-18
 ===============================================
 
-本次更新重点优化备份/恢复功能，提升数据管理体验和安全性。
+本次更新新增酒馆版本切换功能，支持在不同 Git 标签版本间自由切换。
 
 ───────────────────────────────────────────────
-【核心功能优化】
+【新增功能】
 ───────────────────────────────────────────────
-  ★ 备份存储位置变更
-    • 备份目录统一调整
-        - 原路径：/storage/emulated/0/Download/
-        - 新路径：/storage/emulated/0/SillyTavern/
-        - 优势：独立备份目录，避免与其他下载文件混杂，便于管理
+  ★ 酒馆版本切换
+    • 系统维护菜单新增'7. 酒馆版本切换'选项
+    • 三级子菜单功能：
+        1. 查看版本标签 - 列出所有可用的 Git 标签版本
+        2. 切换酒馆版本 - 切换到指定标签版本并自动安装依赖
+        3. 版本切换帮助 - 详细的使用指南和常见问题解答
 
-  ★ 智能权限管理机制
-    • 新增存储权限检测函数 (check_storage_permission)
-        - 导出/导入前自动检测存储权限
-        - 未授权时自动弹窗申请权限
-        - 等待用户授权（最长15秒）
-        - 权限获取失败时友好提示并终止操作
-    • 适用范围：
-        - 导出酒馆数据
-        - 导出酒馆本体
-        - 导入酒馆数据
-        - 导入酒馆本体
+  ★ 查看版本标签功能
+    • 自动获取远程标签列表（git fetch --tags）
+    • 按创建日期排序显示所有版本标签
+    • 显示当前所在版本信息
+    • 彩色输出和序号标记，方便识别选择
+    • 网络失败时显示本地标签
 
-  ★ 自动目录管理
-    • 导出操作：
-        - 自动检测备份目录是否存在
-        - 不存在则自动创建 /storage/emulated/0/SillyTavern/
-        - 创建失败时给出明确提示
-    • 导入操作：
-        - 验证备份目录是否存在
-        - 不存在时提示用户正确放置文件路径
-        - 避免误导和操作失败
+  ★ 切换酒馆版本功能
+    • 完整的环境检查（目录、Git 仓库、依赖命令）
+    • 检测未提交的更改，防止数据丢失
+    • 用户输入验证和二次确认机制
+    • 自动切换到指定标签版本（git checkout tags/xxx）
+    • 自动清理并重新安装对应版本的依赖
+    • 三次重试机制确保依赖安装成功
+    • 详细的成功/失败提示和错误处理
 
-───────────────────────────────────────────────
-【用户体验提升】
-───────────────────────────────────────────────
-  ● 更清晰的操作提示
-      - 导出成功：\"已保存到 SillyTavern 文件夹\"
-      - 导入失败：\"请先将备份文件放入 /storage/emulated/0/SillyTavern/ 目录\"
-
-  ● 增强容错机制
-      - 权限申请超时或被拒绝时，操作自动终止，避免后续错误
-      - 目录创建失败时，给出明确的权限检查提示
-
-  ● 保持向下兼容
-      - 新版本自动识别新路径的备份文件
-      - 用户需手动将旧备份从 Download 移至 SillyTavern 目录
+  ★ 版本切换帮助文档
+    • 功能说明和操作流程详解
+    • 标签版本与 release 分支的区别说明
+    • 详细的注意事项和安全提示
+    • 常见问题解答（启动失败、回到最新版本等）
 
 ───────────────────────────────────────────────
-【技术改进】
+【核心优势】
 ───────────────────────────────────────────────
-  ● 代码重构
-      - 提取权限检测逻辑为独立函数，提高代码复用性
-      - 统一四个备份/恢复函数的权限检测流程
-      - 优化错误处理和用户提示信息
+  ● 版本管理灵活性
+      - 自由切换到任意已发布的稳定版本
+      - 回退到旧版本进行兼容性测试
+      - 体验特定版本的功能特性
 
-  ● 安全性增强
-      - 所有文件操作前强制检测存储权限
-      - 防止权限不足导致的数据丢失或操作失败
+  ● 智能依赖管理
+      - 版本切换后自动重新安装对应依赖
+      - 三次重试机制保证安装成功率
+      - 失败时提供修复建议
+
+  ● 安全保障
+      - 切换前检测未提交更改，避免丢失修改
+      - 二次确认机制防止误操作
+      - 建议切换前备份数据
 
 ───────────────────────────────────────────────
-【升级说明】
+【使用场景】
 ───────────────────────────────────────────────
-  ⚠️ 重要提示：
-    1. 旧版本备份文件位于 /storage/emulated/0/Download/
-    2. 新版本备份文件保存至 /storage/emulated/0/SillyTavern/
-    3. 升级后建议：
-       - 手动将旧备份文件移动到新目录
-       - 或重新进行一次完整备份
-    4. 首次使用新版本时请允许存储权限申请
+  ● 稳定性需求
+      - 最新版本遇到问题时，回退到上一个稳定版本
+      - 选择经过验证的特定版本使用
+
+  ● 测试场景
+      - 测试不同版本的功能差异
+      - 验证插件在不同版本的兼容性
+
+  ● 版本探索
+      - 体验历史版本的特性
+      - 了解项目的发展历程
+
+───────────────────────────────────────────────
+【技术实现】
+───────────────────────────────────────────────
+  ● 代码规范
+      - 遵循现有代码风格和注释规范
+      - 使用统一的颜色编码和提示格式
+      - 完善的错误处理和用户交互
+
+  ● 依赖管理
+      - 参考 Install.sh 和 Menu.sh 的安装逻辑
+      - 使用相同的三次重试机制
+      - 清理旧依赖后重新安装
+
+  ● 用户体验
+      - 清晰的操作流程和提示信息
+      - 完整的帮助文档
+      - 友好的错误提示和修复建议
+
+───────────────────────────────────────────────
+【注意事项】
+───────────────────────────────────────────────
+  ⚠️ 使用提示：
+    1. 版本切换前建议先备份酒馆数据
+    2. 切换版本会丢失未提交的文件修改
+    3. 需要良好的网络连接以安装依赖
+    4. 依赖安装失败可通过'修复依赖环境'解决
+    5. 使用'更新酒馆'功能可回到最新 release 分支
+    6. 用户数据（data 目录）不受版本切换影响
+
+───────────────────────────────────────────────
+【兼容性】
+───────────────────────────────────────────────
+  ● 向下兼容
+      - 不影响现有功能的使用
+      - 保持菜单结构的一致性
+      - 代码风格与现有脚本统一
+
+  ● 版本要求
+      - 需要有效的 Git 仓库
+      - Node.js、npm、git 命令可用
+      - 网络连接用于获取标签和安装依赖
 
 ===============================================
 "
@@ -692,12 +730,31 @@ export_tavern_data() {
 
     cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> SillyTavern 目录不存在，无法导出。${NC}"; press_any_key; return; }
     now=$(date +%Y%m%d_%H%M%S)
-    if [ ! -d data ]; then
-        echo -e "${YELLOW}${BOLD}>> 未检测到 data 目录，无数据可导出。${NC}"
+
+    # 检查 data 和 public 目录是否存在
+    has_data=0
+    has_public=0
+    [ -d data ] && has_data=1
+    [ -d public ] && has_public=1
+
+    if [ $has_data -eq 0 ] && [ $has_public -eq 0 ]; then
+        echo -e "${YELLOW}${BOLD}>> 未检测到 data 或 public 目录，无数据可导出。${NC}"
         press_any_key
         return
     fi
-    zip -r "SillyTavern-Data_${now}.zip" data
+
+    # 同时压缩 data 和 public 目录
+    if [ $has_data -eq 1 ] && [ $has_public -eq 1 ]; then
+        echo -e "${CYAN}${BOLD}>> 正在打包 data 和 public 目录...${NC}"
+        zip -r "SillyTavern-Data_${now}.zip" data public
+    elif [ $has_data -eq 1 ]; then
+        echo -e "${YELLOW}${BOLD}>> 仅检测到 data 目录，正在打包...${NC}"
+        zip -r "SillyTavern-Data_${now}.zip" data
+    else
+        echo -e "${YELLOW}${BOLD}>> 仅检测到 public 目录，正在打包...${NC}"
+        zip -r "SillyTavern-Data_${now}.zip" public
+    fi
+
     mv "SillyTavern-Data_${now}.zip" "$BACKUP_DIR/" 2>/dev/null \
         && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 SillyTavern 文件夹。${NC}" \
         || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
@@ -785,23 +842,57 @@ import_tavern_data() {
         fi
         if [[ "$idx" =~ ^[1-9][0-9]*$ ]] && [ "$idx" -le "${#backup_files[@]}" ]; then
             selected_file="${backup_files[$((idx-1))]}"
-            TARGET_DIR="$HOME/SillyTavern/data"
             if [ ! -d "$HOME/SillyTavern" ]; then
                 echo -e "${YELLOW}${BOLD}>> 未检测到 SillyTavern 主目录，请先恢复酒馆本体。${NC}"
                 press_any_key; return
             fi
-            if [ -d "$TARGET_DIR" ]; then
-                echo -e "${YELLOW}${BOLD}>> 警告：目标目录 ${TARGET_DIR} 已存在。"
-                echo -e ">> 继续操作将彻底删除该目录及其所有内容，然后从备份恢复。"
-                echo -e ">> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
+
+            # 检查备份文件中包含哪些目录
+            has_data_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -c '^.*data/' || echo 0)
+            has_public_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -c '^.*public/' || echo 0)
+
+            # 准备删除和恢复的目录列表
+            dirs_to_remove=""
+            dirs_info=""
+
+            if [ "$has_data_in_zip" -gt 0 ]; then
+                TARGET_DATA_DIR="$HOME/SillyTavern/data"
+                if [ -d "$TARGET_DATA_DIR" ]; then
+                    dirs_to_remove="$dirs_to_remove $TARGET_DATA_DIR"
+                fi
+                dirs_info="${dirs_info}data "
+            fi
+
+            if [ "$has_public_in_zip" -gt 0 ]; then
+                TARGET_PUBLIC_DIR="$HOME/SillyTavern/public"
+                if [ -d "$TARGET_PUBLIC_DIR" ]; then
+                    dirs_to_remove="$dirs_to_remove $TARGET_PUBLIC_DIR"
+                fi
+                dirs_info="${dirs_info}public "
+            fi
+
+            if [ "$has_data_in_zip" -eq 0 ] && [ "$has_public_in_zip" -eq 0 ]; then
+                echo -e "${YELLOW}${BOLD}>> 警告：备份文件中未检测到 data 或 public 目录。${NC}"
+                press_any_key; return
+            fi
+
+            # 如果有目录需要覆盖，则提示用户确认
+            if [ -n "$dirs_to_remove" ]; then
+                echo -e "${YELLOW}${BOLD}>> 警告：将要覆盖以下目录：${dirs_info}${NC}"
+                echo -e "${YELLOW}${BOLD}>> 继续操作将彻底删除这些目录及其所有内容，然后从备份恢复。${NC}"
+                echo -e "${YELLOW}${BOLD}>> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
                 read -n1 confirm; echo
                 if ! [[ "$confirm" =~ [yY] ]]; then
                     echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
                     press_any_key; return
                 fi
-                rm -rf "$TARGET_DIR"
+                # 删除要覆盖的目录
+                for dir in $dirs_to_remove; do
+                    rm -rf "$dir"
+                done
             fi
-            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复至 $TARGET_DIR ...${NC}"
+
+            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复 ${dirs_info}目录...${NC}"
             mkdir -p "$HOME/SillyTavern"
             if unzip -o "$selected_file" -d "$HOME/SillyTavern/" >/dev/null 2>&1; then
                 echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
@@ -888,6 +979,308 @@ import_tavern_full() {
     done
 }
 
+# =========================================================================
+# 5.7 酒馆版本切换
+# =========================================================================
+show_version_tags() {
+    echo -e "\n${CYAN}${BOLD}==== 查看版本标签 ====${NC}"
+
+    # 检查 SillyTavern 目录
+    if [ ! -d "$HOME/SillyTavern" ]; then
+        echo -e "${RED}${BOLD}>> SillyTavern 目录不存在，无法查看版本标签。${NC}"
+        press_any_key
+        return
+    fi
+
+    cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败。${NC}"; press_any_key; return; }
+
+    # 检查 Git 仓库
+    if [ ! -d ".git" ]; then
+        echo -e "${RED}${BOLD}>> SillyTavern 目录不是有效的 Git 仓库。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    # 检查 git 命令
+    if ! command -v git >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}>> 检测到 git 命令不可用，请先修复依赖环境。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    # 获取当前版本
+    current_version=$(git describe --tags --exact-match 2>/dev/null || echo "release 分支")
+    echo -e "${YELLOW}${BOLD}>> 当前版本：${current_version}${NC}\n"
+
+    # 尝试更新标签列表
+    echo -e "${CYAN}${BOLD}>> 正在获取最新版本标签...${NC}"
+    if git fetch --tags 2>/dev/null; then
+        echo -e "${GREEN}${BOLD}>> 标签列表已更新。${NC}\n"
+    else
+        echo -e "${YELLOW}${BOLD}>> 无法连接到远程仓库，显示本地标签。${NC}\n"
+    fi
+
+    # 列出所有标签
+    tag_count=$(git tag | wc -l)
+    if [ "$tag_count" -eq 0 ]; then
+        echo -e "${YELLOW}${BOLD}>> 未检测到任何版本标签。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    echo -e "${CYAN}${BOLD}==== 可用版本标签列表 ====${NC}"
+    git --no-pager tag --sort=creatordate --format='%(creatordate:short) %(color:bold green)%(refname:short)%(color:reset)' --color=always \
+    | awk '{printf "\033[1;36m%2d\033[0m %s\n", NR, $0}'
+    echo -e "${CYAN}${BOLD}============================${NC}"
+
+    press_any_key
+    cd "$HOME"
+}
+
+switch_tavern_version() {
+    echo -e "\n${CYAN}${BOLD}==== 切换酒馆版本 ====${NC}"
+
+    # 检查 SillyTavern 目录
+    if [ ! -d "$HOME/SillyTavern" ]; then
+        echo -e "${RED}${BOLD}>> SillyTavern 目录不存在，无法切换版本。${NC}"
+        press_any_key
+        return
+    fi
+
+    cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败。${NC}"; press_any_key; return; }
+
+    # 检查 Git 仓库
+    if [ ! -d ".git" ]; then
+        echo -e "${RED}${BOLD}>> SillyTavern 目录不是有效的 Git 仓库。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    # 检查必要命令
+    for cmd in node npm git; do
+        if ! command -v $cmd >/dev/null 2>&1; then
+            echo -e "${RED}${BOLD}>> 检测到缺失依赖：$cmd，请先修复依赖环境。${NC}"
+            press_any_key
+            cd "$HOME"
+            return
+        fi
+    done
+
+    # 检查未提交的更改
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo -e "${YELLOW}${BOLD}>> 警告：检测到未提交的更改，切换版本将丢失这些更改！${NC}"
+        echo -ne "${YELLOW}${BOLD}是否继续？(y/n)：${NC}"
+        read -n1 confirm; echo
+        if ! [[ "$confirm" =~ [yY] ]]; then
+            echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
+            press_any_key
+            cd "$HOME"
+            return
+        fi
+    fi
+
+    # 获取当前版本
+    current_version=$(git describe --tags --exact-match 2>/dev/null || echo "release 分支")
+    echo -e "${YELLOW}${BOLD}>> 当前版本：${current_version}${NC}\n"
+
+    # 尝试更新标签列表
+    echo -e "${CYAN}${BOLD}>> 正在获取最新版本标签...${NC}"
+    git fetch --tags 2>/dev/null
+
+    # 列出所有标签
+    tag_count=$(git tag | wc -l)
+    if [ "$tag_count" -eq 0 ]; then
+        echo -e "${YELLOW}${BOLD}>> 未检测到任何版本标签，无法切换。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    echo -e "${CYAN}${BOLD}==== 可用版本标签列表 ====${NC}"
+    git --no-pager tag --sort=creatordate --format='%(creatordate:short) %(color:bold green)%(refname:short)%(color:reset)' --color=always \
+    | awk '{printf "\033[1;36m%2d\033[0m %s\n", NR, $0}'
+    echo -e "${CYAN}${BOLD}============================${NC}"
+
+    # 用户选择版本
+    while true; do
+        echo -ne "${CYAN}${BOLD}请输入版本序号后回车（或输入0返回）：${NC}"
+        read -r input_number
+
+        if [[ "$input_number" == "0" ]]; then
+            echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
+            press_any_key
+            cd "$HOME"
+            return
+        fi
+
+        if ! [[ "$input_number" =~ ^[1-9][0-9]*$ ]]; then
+            echo -e "${RED}${BOLD}>> 输入无效，请输入有效的数字。${NC}"
+            continue
+        fi
+
+        if [ "$input_number" -gt "$tag_count" ]; then
+            echo -e "${RED}${BOLD}>> 序号超出范围，请重新输入。${NC}"
+            continue
+        fi
+
+        break
+    done
+
+    # 获取选中的标签名
+    selected_tag=$(git tag --sort=creatordate | sed -n "${input_number}p")
+
+    if [ -z "$selected_tag" ]; then
+        echo -e "${RED}${BOLD}>> 获取标签失败，请重试。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    # 二次确认
+    echo -e "${YELLOW}${BOLD}>> 即将切换到版本：${selected_tag}${NC}"
+    echo -ne "${YELLOW}${BOLD}确认切换？(y/n)：${NC}"
+    read -n1 confirm; echo
+    if ! [[ "$confirm" =~ [yY] ]]; then
+        echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    # 执行版本切换
+    echo -e "${CYAN}${BOLD}>> 正在切换到版本 ${selected_tag}...${NC}"
+    if ! git checkout -f tags/${selected_tag} 2>&1; then
+        echo -e "${RED}${BOLD}>> 版本切换失败，请检查错误信息。${NC}"
+        press_any_key
+        cd "$HOME"
+        return
+    fi
+
+    echo -e "${GREEN}${BOLD}>> 版本切换成功。${NC}"
+
+    # 重新安装依赖
+    echo -e "${CYAN}${BOLD}>> 正在重新安装依赖模块...${NC}"
+    export NODE_ENV=production
+
+    # 清理旧依赖
+    rm -rf node_modules package-lock.json
+
+    # 依赖安装重试机制
+    retry_count=0
+    max_retries=3
+    install_success=0
+
+    while [ $retry_count -lt $max_retries ]; do
+        if [ $retry_count -eq 0 ]; then
+            echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
+        else
+            echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
+        fi
+
+        if npm install --no-audit --no-fund --loglevel=error --omit=dev; then
+            install_success=1
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
+                rm -f package-lock.json
+                rm -rf node_modules
+                sleep 2
+            fi
+        fi
+    done
+
+    if [ $install_success -eq 1 ]; then
+        echo -e "${GREEN}${BOLD}>> 版本切换完成！当前版本：${selected_tag}${NC}"
+        echo -e "${GREEN}${BOLD}>> 依赖已重新安装，可以正常使用。${NC}"
+    else
+        echo -e "${RED}${BOLD}>> 版本已切换，但依赖安装失败，已重试 $max_retries 次。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 请检查网络连接，或稍后在系统维护中选择"修复依赖环境"。${NC}"
+    fi
+
+    press_any_key
+    cd "$HOME"
+}
+
+show_version_switch_help() {
+    echo -e "${CYAN}${BOLD}==================================================${NC}"
+    echo -e "${CYAN}${BOLD}SillyTavern 版本切换指南${NC}"
+    echo -e "${CYAN}${BOLD}==================================================${NC}\n"
+
+    echo -e "${CYAN}${BOLD}一、功能说明${NC}"
+    echo -e "  SillyTavern 采用 Git 版本管理，项目维护者会为稳定版本打上标签。"
+    echo -e "  本功能允许您在不同版本间自由切换，方便测试或回退到稳定版本。\n"
+
+    echo -e "${CYAN}${BOLD}二、操作流程${NC}"
+    echo -e "  ${BOLD}1. 查看版本标签${NC}"
+    echo -e "    - 列出所有可用的版本标签及发布日期"
+    echo -e "    - 序号标记方便快速选择"
+    echo -e "    - 显示当前所在版本\n"
+
+    echo -e "  ${BOLD}2. 切换酒馆版本${NC}"
+    echo -e "    - 输入对应序号切换到目标版本"
+    echo -e "    - 自动重新安装该版本的依赖"
+    echo -e "    - 支持二次确认，避免误操作\n"
+
+    echo -e "${CYAN}${BOLD}三、版本说明${NC}"
+    echo -e "${CYAN}--------------------------------------------------${NC}"
+    echo -e "  ${BOLD}标签版本：${NC}"
+    echo -e "    - 由项目维护者发布的稳定版本（如 1.12.0）"
+    echo -e "    - 适合日常使用，稳定性较好\n"
+
+    echo -e "  ${BOLD}release 分支：${NC}"
+    echo -e "    - 项目的主要开发分支"
+    echo -e "    - 包含最新功能和修复，但可能存在不稳定因素"
+    echo -e "    - 通过"更新酒馆"功能可切换回该分支\n"
+
+    echo -e "${CYAN}${BOLD}四、注意事项${NC}"
+    echo -e "  · ${BOLD}版本切换前：${NC} 建议先备份酒馆数据（系统维护 → 导出酒馆数据）"
+    echo -e "  · ${BOLD}未提交更改：${NC} 切换版本会丢失未提交的文件修改，请注意保存"
+    echo -e "  · ${BOLD}依赖安装：${NC} 切换版本后会自动重新安装依赖，需要良好的网络连接"
+    echo -e "  · ${BOLD}依赖失败：${NC} 若依赖安装失败，可在系统维护中选择"修复依赖环境""
+    echo -e "  · ${BOLD}回到最新：${NC} 如需回到最新版本，使用主菜单的"更新酒馆"功能\n"
+
+    echo -e "${CYAN}${BOLD}五、常见问题${NC}"
+    echo -e "  ${BOLD}Q：版本切换后启动失败怎么办？${NC}"
+    echo -e "  A：检查依赖是否安装成功，可尝试"系统维护 → 修复依赖环境"。\n"
+
+    echo -e "  ${BOLD}Q：如何回到最新的 release 分支？${NC}"
+    echo -e "  A：使用主菜单的"更新酒馆"功能，会自动切换到 release 分支。\n"
+
+    echo -e "  ${BOLD}Q：切换版本会影响我的数据吗？${NC}"
+    echo -e "  A：不会，用户数据存储在 data 目录，版本切换不影响该目录。\n"
+
+    echo -e "${CYAN}${BOLD}==================================================${NC}"
+    press_any_key
+}
+
+version_switch_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 酒馆版本切换 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 查看版本标签${NC}"
+        echo -e "${BLUE}${BOLD}2. 切换酒馆版本${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 版本切换帮助${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
+        read -n1 version_choice; echo
+
+        case "$version_choice" in
+            0) break ;;
+            1) show_version_tags ;;
+            2) switch_tavern_version ;;
+            3) show_version_switch_help ;;
+            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
 maintenance_menu() {
     while true; do
         clear
@@ -899,8 +1292,9 @@ maintenance_menu() {
         echo -e "${MAGENTA}${BOLD}4. 导出酒馆本体${NC}"
         echo -e "${GREEN}${BOLD}5. 导入酒馆数据${NC}"
         echo -e "${BLUE}${BOLD}6. 导入酒馆本体${NC}"
+        echo -e "${CYAN}${BOLD}7. 酒馆版本切换${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-6）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
         read -n1 sub_choice; echo
         case "$sub_choice" in
             0) break ;;
@@ -910,6 +1304,7 @@ maintenance_menu() {
             4) export_tavern_full ;;
             5) import_tavern_data ;;
             6) import_tavern_full ;;
+            7) version_switch_menu ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
