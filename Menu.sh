@@ -17,79 +17,62 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251018
-UPDATE_DATE="2025-10-18"
+MENU_VERSION=20251102
+UPDATE_DATE="2025-11-02"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-10-18
+SillyTavern-Termux 更新日志 2025-11-02
 ===============================================
 
-本次更新新增酒馆版本切换功能，支持在不同 Git 标签版本间自由切换。
+本次更新新增关联启动功能，支持启动酒馆时同时启动 Gemini-CLI-Termux 反代服务。
 
 ───────────────────────────────────────────────
 【新增功能】
 ───────────────────────────────────────────────
-  ★ 酒馆版本切换
-    • 系统维护菜单新增'7. 酒馆版本切换'选项
+  ★ 关联启动功能
+    • .env 文件新增 START_MODE 变量控制启动模式
+    • 支持两种启动模式：
+        模式1: 单独启动 SillyTavern (默认)
+        模式2: 关联启动 Gemini-CLI-Termux 反代 + SillyTavern
+
+  ★ 关联启动配置菜单
+    • 酒馆配置菜单新增「3. 关联启动配置」选项
     • 三级子菜单功能：
-        1. 查看版本标签 - 列出所有可用的 Git 标签版本
-        2. 切换酒馆版本 - 切换到指定标签版本并自动安装依赖
-        3. 版本切换帮助 - 详细的使用指南和常见问题解答
+        1. 开启关联启动 - 将 START_MODE 设置为 2
+        2. 关闭关联启动 - 将 START_MODE 设置为 1
+        3. 查看反代日志 - 显示 setup.log 日志内容
 
-  ★ 查看版本标签功能
-    • 自动获取远程标签列表（git fetch --tags）
-    • 按创建日期排序显示所有版本标签
-    • 显示当前所在版本信息
-    • 彩色输出和序号标记，方便识别选择
-    • 网络失败时显示本地标签
-
-  ★ 切换酒馆版本功能
-    • 完整的环境检查（目录、Git 仓库、依赖命令）
-    • 检测未提交的更改，防止数据丢失
-    • 用户输入验证和二次确认机制
-    • 自动切换到指定标签版本（git checkout tags/xxx）
-    • 自动清理并重新安装对应版本的依赖
-    • 三次重试机制确保依赖安装成功
-    • 详细的成功/失败提示和错误处理
-
-  ★ 版本切换帮助文档
-    • 功能说明和操作流程详解
-    • 标签版本与 release 分支的区别说明
-    • 详细的注意事项和安全提示
-    • 常见问题解答（启动失败、回到最新版本等）
+  ★ 智能日志管理
+    • 启动前自动检测 setup.log 文件大小
+    • 超过 5MB 自动删除并重建，防止占用过多空间
+    • 日志查看时显示文件大小和清理提示
 
 ───────────────────────────────────────────────
-【核心优势】
+【功能优化】
 ───────────────────────────────────────────────
-  ● 版本管理灵活性
-      - 自由切换到任意已发布的稳定版本
-      - 回退到旧版本进行兼容性测试
-      - 体验特定版本的功能特性
+  ● 启动逻辑优化
+      - 启动前验证 START_MODE 变量有效性
+      - 检测 Gemini-CLI-Termux 目录和文件完整性
+      - 检测 Python 环境是否已安装
+      - 提供详细的错误提示和解决建议
 
-  ● 智能依赖管理
-      - 版本切换后自动重新安装对应依赖
-      - 三次重试机制保证安装成功率
-      - 失败时提供修复建议
-
-  ● 安全保障
-      - 切换前检测未提交更改，避免丢失修改
-      - 二次确认机制防止误操作
-      - 建议切换前备份数据
+  ● 配置管理优化
+      - 关联启动配置界面显示当前模式状态
+      - 开启关联启动前检测依赖是否存在
+      - 提供二次确认机制防止误操作
+      - 自动添加缺失的 START_MODE 变量
 
 ───────────────────────────────────────────────
 【使用场景】
 ───────────────────────────────────────────────
-  ● 稳定性需求
-      - 最新版本遇到问题时，回退到上一个稳定版本
-      - 选择经过验证的特定版本使用
+  ● 单机使用场景
+      - 使用模式1，只启动 SillyTavern
+      - 适合不需要本地反代的用户
 
-  ● 测试场景
-      - 测试不同版本的功能差异
-      - 验证插件在不同版本的兼容性
-
-  ● 版本探索
-      - 体验历史版本的特性
-      - 了解项目的发展历程
+  ● 本地反代场景
+      - 使用模式2，同时启动反代服务和酒馆
+      - 适合需要通过 Gemini-CLI-Termux 反代 API 的用户
+      - 反代服务后台运行，不影响酒馆使用
 
 ───────────────────────────────────────────────
 【技术实现】
@@ -99,39 +82,18 @@ SillyTavern-Termux 更新日志 2025-10-18
       - 使用统一的颜色编码和提示格式
       - 完善的错误处理和用户交互
 
-  ● 依赖管理
-      - 参考 Install.sh 和 Menu.sh 的安装逻辑
-      - 使用相同的三次重试机制
-      - 清理旧依赖后重新安装
-
-  ● 用户体验
-      - 清晰的操作流程和提示信息
-      - 完整的帮助文档
-      - 友好的错误提示和修复建议
+  ● 兼容性保障
+      - 保持向后兼容，默认为模式1
+      - .env 文件缺失时自动创建并设置默认值
+      - 原有功能代码不受影响
 
 ───────────────────────────────────────────────
 【注意事项】
 ───────────────────────────────────────────────
-  ⚠️ 使用提示：
-    1. 版本切换前建议先备份酒馆数据
-    2. 切换版本会丢失未提交的文件修改
-    3. 需要良好的网络连接以安装依赖
-    4. 依赖安装失败可通过'修复依赖环境'解决
-    5. 使用'更新酒馆'功能可回到最新 release 分支
-    6. 用户数据（data 目录）不受版本切换影响
-
-───────────────────────────────────────────────
-【兼容性】
-───────────────────────────────────────────────
-  ● 向下兼容
-      - 不影响现有功能的使用
-      - 保持菜单结构的一致性
-      - 代码风格与现有脚本统一
-
-  ● 版本要求
-      - 需要有效的 Git 仓库
-      - Node.js、npm、git 命令可用
-      - 网络连接用于获取标签和安装依赖
+  ⚠️ 使用关联启动前请确保已安装 Gemini-CLI-Termux
+  ⚠️ 反代服务需要 Python 环境支持
+  ⚠️ 日志文件位于 $HOME/setup.log
+  ⚠️ 关闭 Termux 或杀死进程会同时停止两个服务
 
 ===============================================
 "
@@ -177,21 +139,112 @@ check_storage_permission() {
 # =========================================================================
 start_tavern() {
     echo -e "\n${CYAN}${BOLD}==== 启动 SillyTavern ====${NC}"
+
+    # 依赖检测
     for dep in node npm git; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，请先修复依赖环境。${NC}"
             press_any_key; return
         fi
     done
+
+    # 读取 START_MODE 变量
+    if [ -f "$HOME/.env" ]; then
+        source "$HOME/.env"
+    else
+        echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
+        press_any_key; return
+    fi
+
+    # 验证 START_MODE 值
+    if [ -z "$START_MODE" ]; then
+        echo -e "${RED}${BOLD}>> [错误] START_MODE 变量未定义，请检查 .env 文件。${NC}"
+        press_any_key; return
+    fi
+
+    if [ "$START_MODE" != "1" ] && [ "$START_MODE" != "2" ]; then
+        echo -e "${RED}${BOLD}>> [错误] START_MODE 变量值无效: $START_MODE${NC}"
+        echo -e "${YELLOW}${BOLD}>> 有效值为: 1 (单独启动) 或 2 (关联启动)${NC}"
+        echo -e "${YELLOW}${BOLD}>> 请通过「酒馆配置 -> 关联启动配置」修改设置。${NC}"
+        press_any_key; return
+    fi
+
+    # 检测并清理大型日志文件
+    LOG_FILE="$HOME/setup.log"
+    if [ -f "$LOG_FILE" ]; then
+        LOG_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || stat -f%z "$LOG_FILE" 2>/dev/null)
+        if [ "$LOG_SIZE" -gt 5242880 ]; then  # 5MB = 5*1024*1024
+            echo -e "${YELLOW}${BOLD}>> 检测到日志文件超过 5MB，正在清理...${NC}"
+            rm -f "$LOG_FILE"
+            touch "$LOG_FILE"
+            echo -e "${GREEN}${BOLD}>> 日志文件已重置。${NC}"
+        fi
+    fi
+
+    # SillyTavern 目录检测
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern"
-        if [ -f "start.sh" ]; then
+
+        # 根据 START_MODE 执行不同启动命令
+        if [ "$START_MODE" = "1" ]; then
+            echo -e "${CYAN}${BOLD}>> 启动模式: 单独启动 SillyTavern${NC}"
             pkill -f "node server.js"
-            bash start.sh
-        else
+            if [ -f "start.sh" ]; then
+                bash start.sh
+            else
+                npm start
+            fi
+        elif [ "$START_MODE" = "2" ]; then
+            echo -e "${CYAN}${BOLD}>> 启动模式: 关联启动 (反代服务 + SillyTavern)${NC}"
+
+            # 检测 Gemini-CLI-Termux 是否存在
+            if [ ! -d "$HOME/Gemini-CLI-Termux" ]; then
+                echo -e "${RED}${BOLD}>> [错误] 未检测到 Gemini-CLI-Termux 目录。${NC}"
+                echo -e "${YELLOW}${BOLD}>> 请先安装 Gemini-CLI-Termux 或切换到模式1启动。${NC}"
+                press_any_key; cd "$HOME"; return
+            fi
+
+            # 检测 run.py 是否存在
+            if [ ! -f "$HOME/Gemini-CLI-Termux/run.py" ]; then
+                echo -e "${RED}${BOLD}>> [错误] 未找到 Gemini-CLI-Termux/run.py 文件。${NC}"
+                echo -e "${YELLOW}${BOLD}>> 请检查 Gemini-CLI-Termux 安装是否完整。${NC}"
+                press_any_key; cd "$HOME"; return
+            fi
+
+            # 检测 Python 是否安装
+            if ! command -v python >/dev/null 2>&1; then
+                echo -e "${RED}${BOLD}>> [错误] 未检测到 Python，无法启动反代服务。${NC}"
+                echo -e "${YELLOW}${BOLD}>> 请先安装 Python: pkg install python${NC}"
+                press_any_key; cd "$HOME"; return
+            fi
+
+            # 杀死可能存在的旧进程
+            pkill -f "python.*run.py"
             pkill -f "node server.js"
-            npm start
+
+            # 启动反代服务(后台运行，输出到日志)
+            echo -e "${CYAN}${BOLD}>> 正在启动 Gemini-CLI-Termux 反代服务...${NC}"
+            python "$HOME/Gemini-CLI-Termux/run.py" > "$LOG_FILE" 2>&1 &
+
+            # 等待反代服务启动
+            sleep 2
+
+            # 检测反代服务是否成功启动
+            if pgrep -f "python.*run.py" >/dev/null; then
+                echo -e "${GREEN}${BOLD}>> 反代服务已启动。${NC}"
+            else
+                echo -e "${YELLOW}${BOLD}>> 反代服务启动状态未知，请通过「关联启动配置 -> 查看反代日志」检查。${NC}"
+            fi
+
+            # 启动 SillyTavern
+            echo -e "${CYAN}${BOLD}>> 正在启动 SillyTavern...${NC}"
+            if [ -f "start.sh" ]; then
+                bash start.sh
+            else
+                npm start
+            fi
         fi
+
         press_any_key
         cd "$HOME"
     else
@@ -296,10 +349,11 @@ tavern_config_menu() {
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 局域网配置项${NC}"
         echo -e "${BLUE}${BOLD}2. 修改内存限制${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 恢复启动文件${NC}"
-        echo -e "${RED}${BOLD}4. 恢复配置文件${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 关联启动配置${NC}"
+        echo -e "${CYAN}${BOLD}4. 恢复启动文件${NC}"
+        echo -e "${RED}${BOLD}5. 恢复配置文件${NC}"
         echo -e "${CYAN}${BOLD}====================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-5）：${NC}"
         read -n1 config_choice; echo
 
         case "$config_choice" in
@@ -344,7 +398,8 @@ tavern_config_menu() {
                 fi
                 press_any_key
                 ;;
-            3)
+            3) startup_association_menu ;;
+            4)
                 cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
                 if [ ! -f start.sh.bak ]; then
                     echo -e "${MAGENTA}${BOLD}>> 未找到 start.sh.bak 备份文件，无法恢复。${NC}"
@@ -354,7 +409,7 @@ tavern_config_menu() {
                 echo -e "${YELLOW}${BOLD}>> 启动文件已恢复为初始版本。${NC}"
                 press_any_key
                 ;;
-            4)
+            5)
                 cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
                 if [ ! -f config.yaml.bak ]; then
                     echo -e "${BRIGHT_MAGENTA}${BOLD}>> 未找到 config.yaml.bak 备份文件，无法恢复。${NC}"
@@ -469,6 +524,138 @@ lan_config_menu() {
                 echo -e "  · ${BOLD}设备重启或网络切换：${NC} 需重新获取内网IP并用新地址访问。\n"
 
                 echo -e "${CYAN}${BOLD}==================================================${NC}"
+                press_any_key
+                ;;
+            *)
+                echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1
+                ;;
+        esac
+    done
+}
+
+# =========================================================================
+# 关联启动配置菜单
+# =========================================================================
+startup_association_menu() {
+    while true; do
+        clear
+        echo -e "${CYAN}${BOLD}==== 关联启动配置 ====${NC}"
+
+        # 显示当前配置状态
+        if [ -f "$HOME/.env" ]; then
+            source "$HOME/.env"
+            if [ "$START_MODE" = "1" ]; then
+                echo -e "${YELLOW}${BOLD}当前状态: 单独启动模式${NC}"
+            elif [ "$START_MODE" = "2" ]; then
+                echo -e "${GREEN}${BOLD}当前状态: 关联启动模式${NC}"
+            else
+                echo -e "${RED}${BOLD}当前状态: 配置异常 (START_MODE=$START_MODE)${NC}"
+            fi
+        else
+            echo -e "${RED}${BOLD}当前状态: 配置文件缺失${NC}"
+        fi
+
+        echo ""
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 开启关联启动${NC}"
+        echo -e "${RED}${BOLD}2. 关闭关联启动${NC}"
+        echo -e "${BLUE}${BOLD}3. 查看反代日志${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
+        read -n1 assoc_choice; echo
+
+        case "$assoc_choice" in
+            0) break ;;
+            1)
+                # 开启关联启动
+                echo -e "\n${CYAN}${BOLD}==== 开启关联启动 ====${NC}"
+
+                # 检测 .env 文件
+                if [ ! -f "$HOME/.env" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
+                    press_any_key; continue
+                fi
+
+                # 检测 Gemini-CLI-Termux 是否存在
+                if [ ! -d "$HOME/Gemini-CLI-Termux" ]; then
+                    echo -e "${YELLOW}${BOLD}>> [警告] 未检测到 Gemini-CLI-Termux 目录。${NC}"
+                    echo -e "${YELLOW}${BOLD}>> 启用关联启动后，如果该目录不存在，启动将会失败。${NC}"
+                    echo -ne "${CYAN}${BOLD}>> 是否仍要开启关联启动? (y/n): ${NC}"
+                    read -n1 confirm; echo
+                    if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+                        echo -e "${YELLOW}${BOLD}>> 已取消操作。${NC}"
+                        press_any_key; continue
+                    fi
+                fi
+
+                # 修改 START_MODE 为 2
+                if grep -q "^START_MODE=" "$HOME/.env"; then
+                    sed -i 's/^START_MODE=.*/START_MODE=2/' "$HOME/.env"
+                    echo -e "${GREEN}${BOLD}>> 关联启动已开启。${NC}"
+                    echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将同时启动 Gemini-CLI-Termux 反代服务。${NC}"
+                else
+                    echo -e "${RED}${BOLD}>> [错误] .env 文件中未找到 START_MODE 变量。${NC}"
+                    echo -e "${YELLOW}${BOLD}>> 正在添加配置...${NC}"
+                    echo "START_MODE=2" >> "$HOME/.env"
+                    echo -e "${GREEN}${BOLD}>> 关联启动已开启。${NC}"
+                fi
+                press_any_key
+                ;;
+            2)
+                # 关闭关联启动
+                echo -e "\n${CYAN}${BOLD}==== 关闭关联启动 ====${NC}"
+
+                # 检测 .env 文件
+                if [ ! -f "$HOME/.env" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
+                    press_any_key; continue
+                fi
+
+                # 修改 START_MODE 为 1
+                if grep -q "^START_MODE=" "$HOME/.env"; then
+                    sed -i 's/^START_MODE=.*/START_MODE=1/' "$HOME/.env"
+                    echo -e "${GREEN}${BOLD}>> 关联启动已关闭。${NC}"
+                    echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将只启动 SillyTavern。${NC}"
+                else
+                    echo -e "${RED}${BOLD}>> [错误] .env 文件中未找到 START_MODE 变量。${NC}"
+                    echo -e "${YELLOW}${BOLD}>> 正在添加配置...${NC}"
+                    echo "START_MODE=1" >> "$HOME/.env"
+                    echo -e "${GREEN}${BOLD}>> 关联启动已关闭。${NC}"
+                fi
+                press_any_key
+                ;;
+            3)
+                # 查看反代日志
+                echo -e "\n${CYAN}${BOLD}==== 查看反代日志 ====${NC}"
+
+                LOG_FILE="$HOME/setup.log"
+                if [ ! -f "$LOG_FILE" ]; then
+                    echo -e "${YELLOW}${BOLD}>> 日志文件不存在。${NC}"
+                    echo -e "${CYAN}${BOLD}>> 日志文件将在首次使用关联启动后生成。${NC}"
+                    press_any_key; continue
+                fi
+
+                # 检测日志文件是否为空
+                if [ ! -s "$LOG_FILE" ]; then
+                    echo -e "${YELLOW}${BOLD}>> 日志文件为空。${NC}"
+                    press_any_key; continue
+                fi
+
+                # 显示日志文件内容
+                echo -e "${CYAN}${BOLD}>> 日志文件路径: $LOG_FILE${NC}"
+                echo -e "${CYAN}${BOLD}>> 正在显示最后 50 行日志...${NC}\n"
+                echo -e "${GREEN}${BOLD}========== 日志内容开始 ==========${NC}"
+                tail -n 50 "$LOG_FILE"
+                echo -e "${GREEN}${BOLD}========== 日志内容结束 ==========${NC}\n"
+
+                # 显示日志文件大小
+                LOG_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || stat -f%z "$LOG_FILE" 2>/dev/null)
+                LOG_SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $LOG_SIZE/1024/1024}")
+                echo -e "${CYAN}${BOLD}>> 日志文件大小: ${LOG_SIZE_MB} MB${NC}"
+                if [ "$LOG_SIZE" -gt 5242880 ]; then
+                    echo -e "${YELLOW}${BOLD}>> 日志文件已超过 5MB，下次启动时将自动清理。${NC}"
+                fi
+
                 press_any_key
                 ;;
             *)
