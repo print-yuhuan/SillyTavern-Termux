@@ -17,11 +17,11 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251102
-UPDATE_DATE="2025-11-02"
+MENU_VERSION=20251104
+UPDATE_DATE="2025-11-04"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-11-02
+SillyTavern-Termux 更新日志 2025-11-04
 ===============================================
 
 本次更新新增关联启动功能，支持启动酒馆时同时启动 Gemini-CLI-Termux 反代服务。
@@ -188,7 +188,7 @@ start_tavern() {
         # 根据 START_MODE 执行不同启动命令
         if [ "$START_MODE" = "1" ]; then
             echo -e "${CYAN}${BOLD}>> 启动模式: 单独启动 SillyTavern${NC}"
-            pkill -f "node server.js"
+            pkill -f 'node.*server.js'
             if [ -f "start.sh" ]; then
                 bash start.sh
             else
@@ -219,8 +219,8 @@ start_tavern() {
             fi
 
             # 杀死可能存在的旧进程
-            pkill -f "python.*run.py"
-            pkill -f "node server.js"
+            pkill -f 'python.*run.py'
+            pkill -f 'node.*server.js'
 
             # 启动反代服务(后台运行，输出到日志)
             echo -e "${CYAN}${BOLD}>> 正在启动 Gemini-CLI-Termux 反代服务...${NC}"

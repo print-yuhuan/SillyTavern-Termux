@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2025.11.02-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2025.11.04-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 
@@ -606,7 +606,7 @@ Bug 报告<br>功能请求<br>公开讨论
 
 ### 商业授权
 
-如需将本项目用于商业用途，请通过以下方式联系作者获取商业授权：
+本项目禁止用于商业用途，请通过以下方式联系作者：
 
 - 📧 邮件：print.yuhuan@gmail.com
 - 💬 QQ 群：807134015
