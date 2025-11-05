@@ -1568,8 +1568,11 @@ uninstall_all() {
             rm -rf "$HOME/SillyTavern"
         fi
         rm -f "$HOME/Menu.sh" "$HOME/.env" "$HOME/Install.sh"
+        sed -i '/# SillyTavern-Termux 菜单自启动/d' "$HOME/.bashrc" 2>/dev/null
         sed -i '/bash[ ]\+\$HOME\/Menu\.sh/d' "$HOME/.bashrc" 2>/dev/null
+        sed -i '/# SillyTavern-Termux 菜单自启动/d' "$HOME/.bash_profile" 2>/dev/null
         sed -i '/bash[ ]\+\$HOME\/Menu\.sh/d' "$HOME/.bash_profile" 2>/dev/null
+        sed -i '/# SillyTavern-Termux 菜单自启动/d' "$HOME/.profile" 2>/dev/null
         sed -i '/bash[ ]\+\$HOME\/Menu\.sh/d' "$HOME/.profile" 2>/dev/null
         echo -e "${GREEN}${BOLD}>> 卸载完成，已清理相关文件。${NC}"
         exit 0

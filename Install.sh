@@ -174,7 +174,7 @@ if ! grep -qE 'bash[ ]+\$HOME/Menu\.sh' "$PROFILE_FILE"; then
     if [ -s "$PROFILE_FILE" ]; then
         echo '' >> "$PROFILE_FILE"
     fi
-    echo '# SillyTavern Termux 菜单自启动' >> "$PROFILE_FILE"
+    echo '# SillyTavern-Termux 菜单自启动' >> "$PROFILE_FILE"
     echo 'bash $HOME/Menu.sh' >> "$PROFILE_FILE"
     echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置菜单自启动。${NC}"
 else
