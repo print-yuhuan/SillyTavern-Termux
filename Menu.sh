@@ -277,9 +277,9 @@ update_tavern() {
         echo -e "${CYAN}${BOLD}>> 正在更新依赖模块...${NC}"
         export NODE_ENV=production
 		
-        rm -f package-lock.json
-        rm -rf node_modules
-        npm cache clean --force
+        [ -f package-lock.json ] && rm -f package-lock.json
+        [ -d node_modules ] && rm -rf node_modules
+        [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
         retry_count=0
         max_retries=3
@@ -299,9 +299,9 @@ update_tavern() {
                 retry_count=$((retry_count + 1))
                 if [ $retry_count -lt $max_retries ]; then
                     echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                    rm -f package-lock.json
-                    rm -rf node_modules
-					npm cache clean --force
+                    [ -f package-lock.json ] && rm -f package-lock.json
+                    [ -d node_modules ] && rm -rf node_modules
+                    [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
                     sleep 3
                 fi
             fi
@@ -1337,9 +1337,9 @@ switch_tavern_version() {
     export NODE_ENV=production
 
     # 清理旧依赖
-    rm -f package-lock.json
-	rm -rf node_modules
-	npm cache clean --force
+    [ -f package-lock.json ] && rm -f package-lock.json
+    [ -d node_modules ] && rm -rf node_modules
+    [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
     # 依赖安装重试机制
     retry_count=0
@@ -1360,9 +1360,9 @@ switch_tavern_version() {
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
                 echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                rm -f package-lock.json
-                rm -rf node_modules
-				npm cache clean --force
+                [ -f package-lock.json ] && rm -f package-lock.json
+                [ -d node_modules ] && rm -rf node_modules
+                [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
                 sleep 3
             fi
         fi

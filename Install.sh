@@ -189,9 +189,9 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 export NODE_ENV=production
 
-rm -f package-lock.json
-rm -rf node_modules
-npm cache clean --force
+[ -f package-lock.json ] && rm -f package-lock.json
+[ -d node_modules ] && rm -rf node_modules
+[ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
 retry_count=0
 max_retries=3
@@ -211,9 +211,9 @@ while [ $retry_count -lt $max_retries ]; do
         retry_count=$((retry_count + 1))
         if [ $retry_count -lt $max_retries ]; then
             echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-            rm -f package-lock.json
-            rm -rf node_modules
-			npm cache clean --force
+            [ -f package-lock.json ] && rm -f package-lock.json
+            [ -d node_modules ] && rm -rf node_modules
+            [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
             sleep 3
         fi
     fi
