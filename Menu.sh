@@ -17,11 +17,11 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251106
-UPDATE_DATE="2025-11-06"
+MENU_VERSION=20251108
+UPDATE_DATE="2025-11-08"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-11-06
+SillyTavern-Termux 更新日志 2025-11-08
 ===============================================
 
 本次更新优化了依赖安装流程，增强了安装稳定性和可靠性。
@@ -82,6 +82,62 @@ REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Term
 # ==== 通用函数 ====
 get_version() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2 | tr -d '\r'; }
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
+
+# 获取局域网 IPv4 地址(优先 WiFi/以太网，排除 VPN 和回环地址)
+get_lan_ipv4() {
+    local ip iface
+
+    # 检测是否支持 ip 命令
+    if command -v ip >/dev/null 2>&1; then
+        # 优先获取 WiFi/以太网接口地址，排除 VPN(tun) 地址
+        while IFS= read -r iface; do
+            case "$iface" in
+                wlan*|eth*|en*)
+                    ip=$(ip -4 -o addr show dev "$iface" scope global 2>/dev/null | awk '{print $4}' | cut -d'/' -f1 | head -n1)
+                    if [ -n "$ip" ]; then
+                        echo "$ip"
+                        return 0
+                    fi
+                    ;;
+            esac
+        done < <(ip -4 -o addr show scope global 2>/dev/null | awk '{print $2}' | uniq)
+
+        # 备用方案：获取任意非 lo/tun/ppp 接口的地址
+        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '!/ (lo|tun|ppp)/ {print $4}' | cut -d'/' -f1 | head -n1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # 如果 ip 命令不可用或未找到地址，使用 ifconfig
+    if command -v ifconfig >/dev/null 2>&1; then
+        # 遍历 wlan0-wlan5 接口
+        for i in $(seq 0 5); do
+            ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{print $2}' | head -n1)
+            if [ -n "$ip" ]; then
+                echo "$ip"
+                return 0
+            fi
+        done
+
+        # 获取第一个非回环、非 tun 接口的地址
+        ip=$(ifconfig 2>/dev/null | awk '
+            /^[a-zA-Z0-9]+:/ {
+                iface=$1
+                sub(":", "", iface)
+            }
+            /inet / && $2 != "127.0.0.1" && iface !~ /^tun/ {
+                print $2
+                exit
+            }')
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+    return 1
+}
 
 # ==== 存储权限检测函数 ====
 check_storage_permission() {
@@ -452,25 +508,28 @@ lan_config_menu() {
                 press_any_key
                 ;;
             3)
-                ip_found=0
-                for i in $(seq 0 5); do
-                    ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{print $2}' | head -n1)
-                    if [ -n "$ip" ]; then
-                        echo -e "${CYAN}=================================================${NC}"
-                        echo -e "请在局域网内的其他设备浏览器中访问："
-                        echo -e "${GREEN}${BOLD}http://$ip:8000/${NC}"
-                        echo -e "${CYAN}=================================================${NC}"
-                        ip_found=1
-                        break
-                    fi
-                done
-                if [ "$ip_found" -eq 0 ]; then
-                    echo -e "${YELLOW}${BOLD}未检测到可用的 wlan 接口IP。${NC}"
-                    echo -e "${RED}${BOLD}请确保本机已连接WiFi，并重试。${NC}"
+                ip=$(get_lan_ipv4)
+                if [ -n "$ip" ]; then
+                    echo -e "${CYAN}=================================================${NC}"
+                    echo -e "请在局域网内的其他设备浏览器中访问："
+                    echo -e "${GREEN}${BOLD}http://$ip:8000/${NC}"
+                    echo -e "${CYAN}=================================================${NC}"
+                else
+                    echo -e "${YELLOW}${BOLD}>> 未检测到可用的局域网地址。${NC}"
+                    echo -e "${RED}${BOLD}>> 请确保本机已连接WiFi，并重试。${NC}"
                 fi
                 press_any_key
                 ;;
             4)
+                # 获取当前实际IP地址
+                local current_ip=$(get_lan_ipv4)
+                local ip_display
+                if [ -n "$current_ip" ]; then
+                    ip_display="${GREEN}${BOLD}http://$current_ip:8000/${NC}"
+                else
+                    ip_display="http://内网IP:8000/ ${YELLOW}${BOLD}(当前未检测到IP)${NC}"
+                fi
+
                 echo -e "${CYAN}${BOLD}==================================================${NC}"
                 echo -e "${CYAN}${BOLD}SillyTavern 局域网连接指南${NC}"
                 echo -e "${CYAN}${BOLD}==================================================${NC}\n"
@@ -485,7 +544,7 @@ lan_config_menu() {
                 echo -e "  ${BOLD}2. 获取内网地址（如已知且无变动可跳过）${NC}"
                 echo -e "    - 若设备重启、WiFi重连、网络切换，内网IP可能变动，需重新获取。\n"
                 echo -e "  ${BOLD}3. 启动酒馆服务${NC}"
-                echo -e "    - 返回主菜单，选择“启动酒馆”，务必保持终端窗口运行。\n"
+                echo -e "    - 返回主菜单，选择"启动酒馆"，务必保持终端窗口运行。\n"
                 echo -e "  ${BOLD}4. 其他设备访问${NC}"
                 echo -e "    - 在同网络下的手机、电脑等浏览器输入上一步获取的网址访问 SillyTavern。\n"
 
@@ -493,13 +552,13 @@ lan_config_menu() {
                 echo -e "${CYAN}--------------------------------------------------${NC}"
                 echo -e "${CYAN}${BOLD}方式一：两台设备连接同一WiFi/路由器${NC}"
                 echo -e "  - 本机和目标设备都连同一WiFi路由器。"
-                echo -e "  - 直接在浏览器输入 http://内网IP:8000/ 访问。\n"
+                echo -e "  - 直接在浏览器输入 $ip_display 访问。\n"
                 echo -e "${CYAN}${BOLD}方式二：目标设备连接本机热点${NC}"
-                echo -e "  - 本机开启“个人热点”，目标设备连接该热点。"
-                echo -e "  - 浏览器输入 http://内网IP:8000/ 访问。\n"
+                echo -e "  - 本机开启"个人热点"，目标设备连接该热点。"
+                echo -e "  - 浏览器输入 $ip_display 访问。\n"
                 echo -e "${CYAN}${BOLD}方式三：本机连接目标设备热点${NC}"
                 echo -e "  - 目标设备开启热点，本机连接该热点。"
-                echo -e "  - 浏览器输入 http://内网IP:8000/ 访问。\n"
+                echo -e "  - 浏览器输入 $ip_display 访问。\n"
 
                 echo -e "${CYAN}${BOLD}四、常见问题与提示${NC}"
                 echo -e "  · ${BOLD}获取不到内网IP：${NC} 请确认本机WiFi/热点已连接，可尝试断开重连。"
