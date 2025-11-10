@@ -17,11 +17,11 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251108
-UPDATE_DATE="2025-11-08"
+MENU_VERSION=20251110
+UPDATE_DATE="2025-11-10"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-11-08
+SillyTavern-Termux 更新日志 2025-11-10
 ===============================================
 
 本次更新优化了依赖安装流程，增强了安装稳定性和可靠性。
@@ -32,8 +32,8 @@ SillyTavern-Termux 更新日志 2025-11-08
   ● 依赖安装流程优化
       - 统一清理策略：在依赖安装前强制清理缓存
       - 新增 npm cache clean --force 命令，确保使用最新依赖
-      - 删除旧的 package-lock.json 和 node_modules 目录
-      - 重试等待时间从 2 秒延长到 3 秒，提高稳定性
+      - 删除旧的 node_modules 目录
+      - 重试等待时间延长到 3 秒，提高稳定性
 
   ● 受影响功能模块
       - 安装脚本 (Install.sh)：初次安装依赖时
@@ -41,7 +41,7 @@ SillyTavern-Termux 更新日志 2025-11-08
       - 版本切换 (Menu.sh switch_tavern_version)：切换版本时
 
   ● 版本说明更新
-      - 更新稳定版本示例从 1.12.0 到 1.13.4
+      - 更新稳定版本示例到 1.13.4
       - 与官方最新稳定版本保持同步
 
 ───────────────────────────────────────────────
@@ -55,10 +55,9 @@ SillyTavern-Termux 更新日志 2025-11-08
 【技术细节】
 ───────────────────────────────────────────────
   ● 清理顺序
-      1. 删除 package-lock.json
-      2. 删除 node_modules 目录
-      3. 清空 npm 缓存
-      4. 重新安装依赖
+      1. 删除 node_modules 目录
+      2. 清空 npm 缓存
+      3. 重新安装依赖
 
   ● 适用场景
       - 首次安装 SillyTavern
@@ -333,7 +332,6 @@ update_tavern() {
         echo -e "${CYAN}${BOLD}>> 正在更新依赖模块...${NC}"
         export NODE_ENV=production
 		
-        [ -f package-lock.json ] && rm -f package-lock.json
         [ -d node_modules ] && rm -rf node_modules
         [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
@@ -355,7 +353,6 @@ update_tavern() {
                 retry_count=$((retry_count + 1))
                 if [ $retry_count -lt $max_retries ]; then
                     echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                    [ -f package-lock.json ] && rm -f package-lock.json
                     [ -d node_modules ] && rm -rf node_modules
                     [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
                     sleep 3
@@ -1396,7 +1393,6 @@ switch_tavern_version() {
     export NODE_ENV=production
 
     # 清理旧依赖
-    [ -f package-lock.json ] && rm -f package-lock.json
     [ -d node_modules ] && rm -rf node_modules
     [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
@@ -1419,7 +1415,6 @@ switch_tavern_version() {
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
                 echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                [ -f package-lock.json ] && rm -f package-lock.json
                 [ -d node_modules ] && rm -rf node_modules
                 [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
                 sleep 3

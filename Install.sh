@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20251108
+INSTALL_VERSION=20251110
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -189,7 +189,6 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 export NODE_ENV=production
 
-[ -f package-lock.json ] && rm -f package-lock.json
 [ -d node_modules ] && rm -rf node_modules
 [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
 
@@ -211,7 +210,6 @@ while [ $retry_count -lt $max_retries ]; do
         retry_count=$((retry_count + 1))
         if [ $retry_count -lt $max_retries ]; then
             echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-            [ -f package-lock.json ] && rm -f package-lock.json
             [ -d node_modules ] && rm -rf node_modules
             [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
             sleep 3
