@@ -17,11 +17,11 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20251110
-UPDATE_DATE="2025-11-10"
+MENU_VERSION=20251211
+UPDATE_DATE="2025-12-11"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2025-11-10
+SillyTavern-Termux 更新日志 2025-12-11
 ===============================================
 
 本次更新优化了依赖安装流程，增强了安装稳定性和可靠性。
@@ -172,6 +172,13 @@ check_storage_permission() {
 # =========================================================================
 start_tavern() {
     echo -e "\n${CYAN}${BOLD}==== 启动 SillyTavern ====${NC}"
+
+    # 获取唤醒锁，防止设备在服务运行期间休眠
+    if command -v termux-wake-lock >/dev/null 2>&1; then
+        termux-wake-lock
+        # 设置 trap 确保函数退出时自动释放唤醒锁
+        trap 'termux-wake-unlock' RETURN
+    fi
 
     # 依赖检测
     for dep in node npm git; do
