@@ -173,13 +173,6 @@ check_storage_permission() {
 start_tavern() {
     echo -e "\n${CYAN}${BOLD}==== 启动 SillyTavern ====${NC}"
 
-    # 获取唤醒锁，防止设备在服务运行期间休眠
-    if command -v termux-wake-lock >/dev/null 2>&1; then
-        termux-wake-lock
-        # 设置 trap 确保函数退出时自动释放唤醒锁
-        trap 'termux-wake-unlock' RETURN
-    fi
-
     # 依赖检测
     for dep in node npm git; do
         if ! command -v $dep >/dev/null 2>&1; then
@@ -219,6 +212,13 @@ start_tavern() {
             touch "$LOG_FILE"
             echo -e "${GREEN}${BOLD}>> 日志文件已重置。${NC}"
         fi
+    fi
+
+	# 启用唤醒锁，防止设备在服务运行期间休眠
+    if command -v termux-wake-lock >/dev/null 2>&1; then
+        termux-wake-lock
+		# 设置 trap 确保函数退出时自动解除唤醒锁
+        trap 'command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock' RETURN
     fi
 
     # SillyTavern 目录检测
