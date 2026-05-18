@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2025.12.11-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2025.12.11-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/start.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 
@@ -112,17 +112,23 @@
 打开 Termux，粘贴并执行以下命令：
 
 ```bash
-curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh && bash Install.sh
+curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/start.sh && bash start.sh
 ```
 
 **安装过程自动完成以下操作：**
 
+**引导阶段（start.sh 自动执行）：**
+1. ✅ Termux 环境检测
+2. ✅ 确保 git 可用（未安装则自动安装）
+3. ✅ 克隆管理脚本仓库（`~/SillyTavern-Termux`）
+
+**安装阶段（自动检测并执行）：**
 1. ✅ 环境检测与存储权限配置
 2. ✅ 更新包管理器
 3. ✅ 安装核心依赖（Git、Node.js、curl 等）
 4. ✅ 下载并配置终端字体
 5. ✅ 克隆 SillyTavern 官方仓库
-6. ✅ 下载管理菜单脚本
+6. ✅ 初始化用户配置
 7. ✅ 配置菜单自启动
 8. ✅ 安装 SillyTavern 依赖包
 
@@ -487,9 +493,9 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 <summary><b>Q15：脚本是否支持自定义配置？</b></summary>
 
 **A：** 支持。高级用户可以通过以下方式自定义：
-- 编辑 `$HOME/.env` 文件修改环境变量
+- 编辑 `$HOME/.sillytavern-termux.conf` 修改用户配置（如 `START_MODE`）
+- 编辑 `$HOME/SillyTavern-Termux/config/base.sh` 修改全局默认配置（版本号、链接等）
 - 编辑 `$HOME/SillyTavern/config.yaml` 自定义 SillyTavern 配置
-- 修改 `$HOME/Menu.sh` 添加自定义菜单选项
 
 建议在修改前备份原始文件。
 </details>
