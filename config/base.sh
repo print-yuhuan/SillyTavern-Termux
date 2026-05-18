@@ -83,3 +83,11 @@ SillyTavern-Termux 更新日志 2025-12-11
 REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
 REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Menu.sh"
+
+# ==== 安装路径配置 ====
+SILLYTAVERN_DIR="$HOME/SillyTavern"
+SILLYTAVERN_REPO="https://github.com/SillyTavern/SillyTavern"
+ST_TERMUX_REPO="https://github.com/print-yuhuan/SillyTavern-Termux"
+FONT_URL="https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"
+FONT_DIR="$HOME/.termux"
+FONT_PATH="$HOME/.termux/font.ttf"
