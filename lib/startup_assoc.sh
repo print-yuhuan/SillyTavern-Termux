@@ -13,17 +13,12 @@ startup_association_menu() {
         echo -e "${CYAN}${BOLD}==== 关联启动配置 ====${NC}"
 
         # 显示当前配置状态
-        if [ -f "$HOME/.env" ]; then
-            source "$HOME/.env"
-            if [ "$START_MODE" = "1" ]; then
-                echo -e "${YELLOW}${BOLD}当前状态: 单独启动模式${NC}"
-            elif [ "$START_MODE" = "2" ]; then
-                echo -e "${GREEN}${BOLD}当前状态: 关联启动模式${NC}"
-            else
-                echo -e "${RED}${BOLD}当前状态: 配置异常 (START_MODE=$START_MODE)${NC}"
-            fi
+        if [ "$START_MODE" = "1" ]; then
+            echo -e "${YELLOW}${BOLD}当前状态: 单独启动模式${NC}"
+        elif [ "$START_MODE" = "2" ]; then
+            echo -e "${GREEN}${BOLD}当前状态: 关联启动模式${NC}"
         else
-            echo -e "${RED}${BOLD}当前状态: 配置文件缺失${NC}"
+            echo -e "${RED}${BOLD}当前状态: 配置异常 (START_MODE=$START_MODE)${NC}"
         fi
 
         echo ""
@@ -41,12 +36,6 @@ startup_association_menu() {
                 # 开启关联启动
                 echo -e "\n${CYAN}${BOLD}==== 开启关联启动 ====${NC}"
 
-                # 检测 .env 文件
-                if [ ! -f "$HOME/.env" ]; then
-                    echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
-                    press_any_key; continue
-                fi
-
                 # 检测 Gemini-CLI-Termux 是否存在
                 if [ ! -d "$HOME/Gemini-CLI-Termux" ]; then
                     echo -e "${YELLOW}${BOLD}>> [警告] 未检测到 Gemini-CLI-Termux 目录。${NC}"
@@ -60,39 +49,29 @@ startup_association_menu() {
                 fi
 
                 # 修改 START_MODE 为 2
-                if grep -q "^START_MODE=" "$HOME/.env"; then
-                    sed -i 's/^START_MODE=.*/START_MODE=2/' "$HOME/.env"
-                    echo -e "${GREEN}${BOLD}>> 关联启动已开启。${NC}"
-                    echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将同时启动 Gemini-CLI-Termux 反代服务。${NC}"
+                if [ -f "$USER_CONF" ] && grep -q "^START_MODE=" "$USER_CONF"; then
+                    sed -i 's/^START_MODE=.*/START_MODE=2/' "$USER_CONF"
                 else
-                    echo -e "${RED}${BOLD}>> [错误] .env 文件中未找到 START_MODE 变量。${NC}"
-                    echo -e "${YELLOW}${BOLD}>> 正在添加配置...${NC}"
-                    echo "START_MODE=2" >> "$HOME/.env"
-                    echo -e "${GREEN}${BOLD}>> 关联启动已开启。${NC}"
+                    echo "START_MODE=2" >> "$USER_CONF"
                 fi
+                START_MODE=2
+                echo -e "${GREEN}${BOLD}>> 关联启动已开启。${NC}"
+                echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将同时启动 Gemini-CLI-Termux 反代服务。${NC}"
                 press_any_key
                 ;;
             2)
                 # 关闭关联启动
                 echo -e "\n${CYAN}${BOLD}==== 关闭关联启动 ====${NC}"
 
-                # 检测 .env 文件
-                if [ ! -f "$HOME/.env" ]; then
-                    echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
-                    press_any_key; continue
-                fi
-
                 # 修改 START_MODE 为 1
-                if grep -q "^START_MODE=" "$HOME/.env"; then
-                    sed -i 's/^START_MODE=.*/START_MODE=1/' "$HOME/.env"
-                    echo -e "${GREEN}${BOLD}>> 关联启动已关闭。${NC}"
-                    echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将只启动 SillyTavern。${NC}"
+                if [ -f "$USER_CONF" ] && grep -q "^START_MODE=" "$USER_CONF"; then
+                    sed -i 's/^START_MODE=.*/START_MODE=1/' "$USER_CONF"
                 else
-                    echo -e "${RED}${BOLD}>> [错误] .env 文件中未找到 START_MODE 变量。${NC}"
-                    echo -e "${YELLOW}${BOLD}>> 正在添加配置...${NC}"
-                    echo "START_MODE=1" >> "$HOME/.env"
-                    echo -e "${GREEN}${BOLD}>> 关联启动已关闭。${NC}"
+                    echo "START_MODE=1" >> "$USER_CONF"
                 fi
+                START_MODE=1
+                echo -e "${GREEN}${BOLD}>> 关联启动已关闭。${NC}"
+                echo -e "${CYAN}${BOLD}>> 下次启动酒馆时将只启动 SillyTavern。${NC}"
                 press_any_key
                 ;;
             3)

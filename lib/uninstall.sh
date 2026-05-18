@@ -16,7 +16,7 @@ uninstall_all() {
         if [ -d "$HOME/SillyTavern/.git" ]; then
             rm -rf "$HOME/SillyTavern"
         fi
-        rm -f "$HOME/Menu.sh" "$HOME/.env" "$HOME/Install.sh"
+        rm -f "$HOME/Menu.sh" "$USER_CONF" "$HOME/Install.sh"
         sed -i '/# SillyTavern-Termux 菜单自启动/d' "$HOME/.bashrc" 2>/dev/null
         sed -i '/bash[ ]\+\$HOME\/Menu\.sh/d' "$HOME/.bashrc" 2>/dev/null
         sed -i '/# SillyTavern-Termux 菜单自启动/d' "$HOME/.bash_profile" 2>/dev/null

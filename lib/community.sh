@@ -1,24 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # =========================================================================
 # 社群链接函数库
-# 职责：获取并展示酒馆社群 Discord 邀请链接、调用系统浏览器跳转
+# 职责：展示酒馆社群 Discord 邀请链接、调用系统浏览器跳转
 # =========================================================================
 
 # =========================================================================
 # 7.1.2 酒馆社群
 # =========================================================================
 community_links_menu() {
-    TMP_ENV="$HOME/.env.remote"
-    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
-        echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
-        press_any_key; return
-    fi
-    JIUGUAN_LINK=$(grep '^JIUGUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    LEINAO_LINK=$(grep '^LEINAO_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    LVCHENG_LINK=$(grep '^LVCHENG_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    YANTING_LINK=$(grep '^YANTING_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    TAOYUAN_LINK=$(grep '^TAOYUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    rm -f "$TMP_ENV"
     while true; do
         clear
         echo -e "${CYAN}${BOLD}==== 酒馆社群 ====${NC}"

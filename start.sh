@@ -13,6 +13,9 @@ for _conf in "$SCRIPT_DIR/config/"*.sh; do
     [ -f "$_conf" ] && source "$_conf"
 done
 
+# ==== 加载用户本地配置（覆盖 config/base.sh 中的默认值，如 START_MODE）====
+[ -f "$USER_CONF" ] && source "$USER_CONF"
+
 # ==== 按顺序加载 lib/ 下所有函数库文件 ====
 for _lib in "$SCRIPT_DIR/lib/"*.sh; do
     [ -f "$_lib" ] && source "$_lib"

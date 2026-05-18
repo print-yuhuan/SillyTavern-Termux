@@ -18,17 +18,9 @@ start_tavern() {
         fi
     done
 
-    # 读取 START_MODE 变量
-    if [ -f "$HOME/.env" ]; then
-        source "$HOME/.env"
-    else
-        echo -e "${RED}${BOLD}>> [错误] 未找到 .env 配置文件。${NC}"
-        press_any_key; return
-    fi
-
     # 验证 START_MODE 值
     if [ -z "$START_MODE" ]; then
-        echo -e "${RED}${BOLD}>> [错误] START_MODE 变量未定义，请检查 .env 文件。${NC}"
+        echo -e "${RED}${BOLD}>> [错误] START_MODE 变量未定义，请检查配置。${NC}"
         press_any_key; return
     fi
 

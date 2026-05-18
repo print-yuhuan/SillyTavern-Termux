@@ -47,14 +47,7 @@ install_app_menu() {
 }
 
 install_discord_app() {
-    TMP_ENV="$HOME/.env.remote"
-    echo -e "${CYAN}${BOLD}>> 正在获取 Discord 下载链接...${NC}"
-    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
-        echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
-        press_any_key; return
-    fi
-    DISCORD_URL=$(grep '^DISCORD_DOWNLOAD=' "$TMP_ENV" | cut -d'=' -f2- | tr -d '\r' | xargs)
-    rm -f "$TMP_ENV"
+    DISCORD_URL="$DISCORD_DOWNLOAD"
     if [ -z "$DISCORD_URL" ]; then
         echo -e "${YELLOW}${BOLD}>> 未配置 Discord 下载链接，请稍后重试。${NC}"
         press_any_key; return

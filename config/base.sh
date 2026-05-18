@@ -21,6 +21,9 @@ NC='\033[0m'
 INSTALL_VERSION=20251211
 MENU_VERSION=20251211
 
+# ==== 运行时默认配置 ====
+START_MODE=1
+
 # ==== 更新日志 ====
 UPDATE_DATE="2025-12-11"
 UPDATE_CONTENT="
@@ -80,9 +83,18 @@ SillyTavern-Termux 更新日志 2025-12-11
 "
 
 # ==== 远程资源地址 ====
-REMOTE_ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
-REMOTE_INSTALL_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Install.sh"
-REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Menu.sh"
+REMOTE_BASE_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/config/base.sh"
+
+# ==== 社群链接 ====
+DISCORD_DOWNLOAD="https://github.com/print-yuhuan/SillyTavern-Termux/releases/download/Discord_308.11-Stable/Discord.apk"
+JIUGUAN_LINK="https://discord.gg/sillytavern"
+LEINAO_LINK="https://discord.gg/odysseia"
+LVCHENG_LINK="https://discord.gg/elysianhorizon"
+YANTING_LINK="https://discord.gg/yPxfzutGrf"
+TAOYUAN_LINK="https://discord.gg/54ZEDnEcwf"
+
+# ==== 用户配置文件路径 ====
+USER_CONF="$HOME/.sillytavern-termux.conf"
 
 # ==== 安装路径配置 ====
 SILLYTAVERN_DIR="$HOME/SillyTavern"
