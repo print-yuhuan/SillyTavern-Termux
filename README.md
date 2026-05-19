@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2025.12.11-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/start.sh)
+[![Version](https://img.shields.io/badge/Version-2025.12.11-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/config/base.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 
@@ -38,21 +38,21 @@
 **一键安装，全自动配置**
 
 - ✅ **零配置安装**：一条命令完成环境检测、依赖安装、字体配置、主程序部署
-- ✅ **智能依赖管理**：自动检测并安装 Node.js、Git、curl 等核心依赖，失败自动重试
+- ✅ **智能依赖管理**：自动检测并安装 Node.js、Git、curl、zip、unzip 等核心依赖，失败自动重试
 - ✅ **开箱即用**：安装完成后自动配置启动项，重启 Termux 即可进入管理菜单
-- ✅ **容错机制**：网络中断自动恢复，安装失败智能回退
+- ✅ **容错机制**：网络中断自动恢复，依赖安装最多重试 3 次
 
 ### 🛠️ 全功能管理菜单
 
-**7大功能模块，覆盖全生命周期管理**
+**7 大功能模块，覆盖全生命周期管理**
 
 | 功能模块 | 核心功能 |
 |---------|---------|
-| **🚀 启动酒馆** | 一键启动 SillyTavern 服务，智能检测依赖完整性 |
-| **🔄 更新酒馆** | 智能检测远程更新，一键拉取最新代码并更新依赖 |
-| **🔧 酒馆配置** | 局域网访问配置、内存限制设置、配置文件恢复 |
+| **🚀 启动酒馆** | 一键启动 SillyTavern 服务，自动检测依赖完整性，自动启用唤醒锁防止系统杀后台 |
+| **🔄 更新酒馆** | 智能检测远程更新，一键同步最新代码并更新依赖 |
+| **🔧 酒馆配置** | 局域网访问配置、内存限制设置、关联启动配置、配置文件恢复 |
 | **🧩 酒馆插件** | 社区热门插件一键安装/卸载，含详细说明与风险提示 |
-| **💾 系统维护** | 数据备份/恢复、依赖修复、版本信息查看 |
+| **💾 系统维护** | 数据备份/恢复、依赖修复、版本切换 |
 | **📦 脚本管理** | 脚本在线升级、更新日志查看、一键彻底卸载 |
 | **ℹ️ 关于脚本** | 作者信息、社群入口、资源下载、反馈渠道 |
 
@@ -78,7 +78,7 @@
 
 **完善的备份与恢复机制**
 
-- 💾 **多层级备份**：支持用户数据独立备份和完整本体备份
+- 💾 **多层级备份**：支持用户数据独立备份（含 `data` 和 `public` 目录）和完整本体备份
 - 📤 **便捷导出**：备份文件自动保存至手机"SillyTavern"专用文件夹
 - 📥 **智能恢复**：自动检测存储权限，从备份目录智能识别文件，一键恢复
 - ⚠️ **安全提示**：恢复操作前强制确认，避免误操作导致数据丢失
@@ -124,13 +124,13 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 **安装阶段（自动检测并执行）：**
 1. ✅ 环境检测与存储权限配置
-2. ✅ 更新包管理器
-3. ✅ 安装核心依赖（Git、Node.js、curl 等）
-4. ✅ 下载并配置终端字体
+2. ✅ 更新包管理器（切换至稳定镜像源）
+3. ✅ 安装核心依赖（Git、Node.js、curl、zip、unzip 等）
+4. ✅ 下载并配置终端字体（MapleMono）
 5. ✅ 克隆 SillyTavern 官方仓库
-6. ✅ 初始化用户配置
+6. ✅ 初始化用户配置文件
 7. ✅ 配置菜单自启动
-8. ✅ 安装 SillyTavern 依赖包
+8. ✅ 安装 SillyTavern 依赖包（npm install，最多重试 3 次）
 
 > ⏱️ **预计耗时**：首次安装约 5-15 分钟（视网络状况而定）
 
@@ -154,21 +154,23 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 | 序号 | 功能模块 | 详细说明 |
 |:---:|:---------|:---------|
-| **1** | **🚀 启动酒馆** | 一键启动 SillyTavern 服务，自动检测依赖完整性并启动 Node.js 服务器 |
-| **2** | **🔄 更新酒馆** | 从官方仓库拉取最新代码，自动更新依赖包，支持版本比对和增量更新 |
-| **3** | **🔧 酒馆配置** | 局域网访问开关、内存限制调整、**关联启动配置**、配置文件恢复 |
+| **1** | **🚀 启动酒馆** | 一键启动 SillyTavern 服务，自动检测依赖完整性，自动启用唤醒锁防止系统杀后台 |
+| **2** | **🔄 更新酒馆** | 同步 SillyTavern 官方 release 分支最新代码并重新安装依赖（会覆盖对 SillyTavern 源码的本地修改，用户数据不受影响） |
+| **3** | **🔧 酒馆配置** | 局域网访问开关、内存限制调整、**关联启动配置**、启动文件/配置文件恢复 |
 | **4** | **🧩 酒馆插件** | 社区插件一键安装/卸载，含详细功能介绍和安全提示 |
 | **5** | **💾 系统维护** | 查看依赖版本、修复环境、备份/恢复用户数据和完整本体、**版本切换** |
-| **6** | **📦 脚本管理** | 检测脚本更新、在线升级、查看更新日志、一键彻底卸载 |
+| **6** | **📦 脚本管理** | 检测管理脚本更新、在线升级（更新成功后自动重启菜单）、查看更新日志、一键彻底卸载 |
 | **7** | **ℹ️ 关于脚本** | 作者信息、QQ 群、邮件反馈、资源下载、社群链接 |
 
 ### 🔧 局域网配置详解
 
 通过 `3. 酒馆配置` → `1. 局域网配置项` 可以：
 
-- **开启/关闭网络监听**：允许局域网内其他设备访问 SillyTavern
+- **开启/关闭网络监听**：修改 `config.yaml` 中的 `listen`、`enableUserAccounts`、`enableDiscreetLogin` 配置，允许局域网内其他设备访问 SillyTavern
 - **获取内网地址**：自动检测并显示设备的局域网 IP 地址
 - **查看连接帮助**：详细的局域网连接指南和常见问题解答
+
+> 💡 首次修改局域网配置时，会自动备份原始 `config.yaml` 为 `config.yaml.bak`，可通过"恢复配置文件"选项还原。
 
 **支持的连接方式：**
 1. 两台设备连接同一 WiFi 路由器
@@ -177,28 +179,37 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 ### 🔗 关联启动配置详解
 
-通过 `3. 酒馆配置` → `3. 关联启动配置` 可以:
+通过 `3. 酒馆配置` → `3. 关联启动配置` 可以：
 
-- **开启/关闭关联启动**: 控制启动酒馆时是否同时启动 Gemini-CLI-Termux 反代服务
-- **查看反代日志**: 实时查看反代服务的运行日志
-- **智能日志管理**: 超过 5MB 自动清理，防止占用过多空间
+- **开启/关闭关联启动**：控制启动酒馆时是否同时启动 Gemini-CLI-Termux 反代服务
+- **查看反代日志**：显示 `~/setup.log` 最后 50 行，实时确认反代服务运行状态
+- **智能日志管理**：超过 5MB 时下次启动自动清理，防止占用过多空间
 
-**支持的启动模式:**
+**支持的启动模式：**
 
-| 模式 | 说明 | 启动命令 | 适用场景 |
-|:---:|:-----|:---------|:---------|
-| **模式1** | 单独启动 SillyTavern | `bash start.sh` | 不需要本地反代的用户 |
-| **模式2** | 关联启动反代+酒馆 | `python run.py & bash start.sh` | 需要通过 Gemini-CLI-Termux 反代 API 的用户 |
+| 模式 | 说明 | 适用场景 |
+|:---:|:-----|:---------|
+| **模式 1** | 单独启动 SillyTavern | 不需要本地反代的用户 |
+| **模式 2** | 后台启动反代服务，同时启动 SillyTavern | 需要通过 Gemini-CLI-Termux 反代 API 的用户 |
 
-**使用前提:**
-- 模式2 需要先安装 [Gemini-CLI-Termux](https://github.com/print-yuhuan/Gemini-CLI-Termux)
-- 确保已安装 Python 环境 (`pkg install python`)
-- 反代服务将后台运行，日志保存在 `$HOME/setup.log`
+**使用前提：**
+- 模式 2 需要先安装 [Gemini-CLI-Termux](https://github.com/print-yuhuan/Gemini-CLI-Termux)
+- 确保已安装 Python 环境（`pkg install python`）
+- 反代服务后台运行，日志输出至 `~/setup.log`
 
-**注意事项:**
+**注意事项：**
 - 关闭 Termux 或杀死进程会同时停止两个服务
 - 可通过「查看反代日志」功能检查反代服务运行状态
-- 日志文件超过 5MB 时，下次启动会自动清理
+
+### 🔧 酒馆配置子菜单
+
+| 选项 | 功能说明 |
+|:---:|:---------|
+| **1. 局域网配置项** | 开启/关闭网络监听，获取内网 IP，查看连接帮助 |
+| **2. 修改内存限制** | 设置 Node.js 可用内存上限（范围：1024–8192 MB），修改前自动备份 `start.sh` |
+| **3. 关联启动配置** | 配置 Gemini-CLI-Termux 反代服务联动，查看反代日志 |
+| **4. 恢复启动文件** | 从 `start.sh.bak` 恢复 SillyTavern 启动脚本至原始状态 |
+| **5. 恢复配置文件** | 从 `config.yaml.bak` 恢复 SillyTavern 配置文件至原始状态 |
 
 ### 🧩 可用插件列表
 
@@ -210,14 +221,18 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 > ⚠️ **安全提示**：酒馆助手插件支持执行自定义 JavaScript 脚本，请仅运行来源可信的代码。
 
+**插件安装目录**：`~/SillyTavern/public/scripts/extensions/third-party/`
+
+**卸载说明**：卸载功能会自动扫描已安装的插件列表（含自行 clone 的第三方插件），按序号选择后一键删除，无需手动定位文件。
+
 ### 💾 备份与恢复
 
 **支持两种备份模式：**
 
-| 备份类型 | 包含内容 | 使用场景 |
-|:--------|:--------|:--------|
-| **用户数据备份** | 角色卡、聊天记录、配置文件（`data` 和 `public` 目录） | 日常备份、数据迁移、设备更换 |
-| **完整本体备份** | 整个 SillyTavern 目录（含插件和自定义修改） | 系统完整备份、环境迁移 |
+| 备份类型 | 包含内容 | 备份文件命名格式 | 使用场景 |
+|:--------|:--------|:--------------|:--------|
+| **用户数据备份** | `data` 目录（角色卡、聊天记录）+ `public` 目录（配置与资源） | `SillyTavern-Data_YYYYMMDD_HHMMSS.zip` | 日常备份、数据迁移、设备更换 |
+| **完整本体备份** | 整个 SillyTavern 目录（含插件和自定义修改） | `SillyTavern_YYYYMMDD_HHMMSS.zip` | 系统完整备份、环境迁移 |
 
 **备份文件存储位置**：`/storage/emulated/0/SillyTavern/`（手机"SillyTavern"文件夹）
 
@@ -227,8 +242,6 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 🔍 导入前验证备份目录和文件，提供清晰提示
 
 ### 🔄 版本切换
-
-**支持灵活的版本管理：**
 
 通过 `5. 系统维护` → `7. 酒馆版本切换` 可以：
 
@@ -252,7 +265,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 🔄 支持通过"更新酒馆"回到最新 release 分支
 
 **智能依赖管理：**
-- 🔧 版本切换后自动清理旧依赖
+- 🔧 版本切换后自动清理旧依赖并重新安装
 - ♻️ 三次重试机制确保依赖安装成功
 - 📦 失败时提供修复建议和指引
 
@@ -287,7 +300,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 📶 **网络环境**：建议在 WiFi 环境下进行首次安装和大版本更新
 - 🔄 **定期备份**：建议每周备份一次用户数据，避免意外丢失
 - 📱 **设备性能**：推荐使用内存 4GB 及以上的设备，以获得更流畅的体验
-- 🔋 **后台运行**：使用 SillyTavern 时，请保持 Termux 在前台或使用 `termux-wake-lock` 防止系统杀后台
+- 🔋 **后台运行**：启动酒馆时会自动启用唤醒锁（`termux-wake-lock`）防止系统杀后台，退出酒馆后自动解除
 
 ---
 
@@ -321,7 +334,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 1. 进入主菜单，选择 `5. 系统维护`
 2. 选择 `3. 导出酒馆数据`
 3. 脚本会自动检测存储权限（如未授权会弹窗申请）
-4. 自动将 `data` 目录打包为 ZIP 文件
+4. 自动将 `data` 和 `public` 目录打包为 ZIP 文件
 5. 备份文件保存在手机的"SillyTavern"文件夹（`/storage/emulated/0/SillyTavern/`）
 6. 文件命名格式：`SillyTavern-Data_YYYYMMDD_HHMMSS.zip`
 
@@ -340,11 +353,11 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 2. 进入主菜单，选择 `5. 系统维护`
 3. 选择 `5. 导入酒馆数据`
 4. 脚本会自动检测存储权限（如未授权会弹窗申请）
-5. 从列表中选择要恢复的备份文件
+5. 从列表中选择要恢复的备份文件（仅显示以 `SillyTavern-Data_` 开头的文件）
 6. 确认覆盖警告后，脚本会自动解压并恢复数据
 
 ⚠️ **重要提示**：
-- 恢复操作会覆盖当前所有数据，请谨慎操作！
+- 恢复操作会覆盖当前 `data` 和 `public` 目录的所有内容，请谨慎操作！
 - 如果看不到备份文件列表，请确认文件已放入正确的目录
 - 首次恢复时请在弹窗中点击"允许"授予存储权限
 </details>
@@ -368,7 +381,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 **A：** 尝试修复依赖环境：
 1. 进入主菜单，选择 `5. 系统维护`
 2. 选择 `2. 修复依赖环境`
-3. 脚本会自动重新安装所有必要的依赖包
+3. 脚本会自动切换至稳定镜像源并重新安装所有必要的依赖包
 4. 修复完成后，重新尝试启动 SillyTavern
 
 如果问题仍未解决，请加入 QQ 群并提供详细的错误信息。
@@ -390,16 +403,25 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 1. **备份重要数据**（如需保留）
 2. 进入主菜单，选择 `6. 脚本管理`
 3. 选择 `3. 一键卸载酒馆`
-4. 确认操作后，脚本会自动清理所有相关文件
-5. 卸载 Termux 应用（可选）
+4. 确认操作后，脚本会自动清理以下内容：
+   - `~/SillyTavern` 目录（SillyTavern 主程序）
+   - `~/.sillytavern-termux.conf`（用户配置文件）
+   - `.bashrc` / `.bash_profile` / `.profile` 中的菜单自启动配置
+5. 如需彻底清除管理脚本，手动删除 `~/SillyTavern-Termux` 目录即可
 
-⚠️ **注意**：卸载操作不可逆，请务必先备份重要数据！
+> ⚠️ **注意**：卸载操作不可逆！`~/SillyTavern-Termux` 管理脚本目录**不会**被自动删除，需手动清理。请务必先备份重要数据！
 </details>
 
 <details>
 <summary><b>Q9：更新 SillyTavern 会丢失我的数据吗？</b></summary>
 
-**A：** 不会。更新操作仅更新程序代码和依赖包，不会影响 `data` 目录中的用户数据（角色卡、聊天记录、配置文件等）。但为了安全起见，建议在大版本更新前进行一次备份。
+**A：** **用户数据（角色卡、聊天记录等）不会丢失。**
+
+更新操作会将 SillyTavern 硬重置到 `origin/release` 分支最新状态：
+- ✅ `data` 目录中的用户数据不受影响
+- ⚠️ 如果您曾直接修改过 SillyTavern 的源码文件，这些修改将被覆盖
+
+为了安全起见，建议在大版本更新前进行一次数据备份。
 </details>
 
 <details>
@@ -434,58 +456,58 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 </details>
 
 <details>
-<summary><b>Q12: 如何使用关联启动功能?</b></summary>
+<summary><b>Q12：如何使用关联启动功能？</b></summary>
 
-**A:** 关联启动功能可让您在启动酒馆时同时启动 Gemini-CLI-Termux 反代服务。
+**A：** 关联启动功能可让您在启动酒馆时同时启动 Gemini-CLI-Termux 反代服务。
 
-**配置步骤:**
+**配置步骤：**
 1. 确保已安装 [Gemini-CLI-Termux](https://github.com/print-yuhuan/Gemini-CLI-Termux)
-2. 确保已安装 Python (`pkg install python`)
+2. 确保已安装 Python（`pkg install python`）
 3. 进入主菜单，选择 `3. 酒馆配置` → `3. 关联启动配置`
 4. 选择 `1. 开启关联启动`
 5. 重新启动酒馆，反代服务将自动在后台运行
 
-**查看日志:**
-- 反代服务日志保存在 `$HOME/setup.log`
+**查看日志：**
+- 反代服务日志保存在 `~/setup.log`
 - 通过「关联启动配置 → 查看反代日志」查看最后 50 行日志
 - 日志文件超过 5MB 时，下次启动会自动清理
 
-**关闭关联启动:**
+**关闭关联启动：**
 - 选择 `2. 关闭关联启动` 即可恢复为单独启动模式
 </details>
 
 <details>
-<summary><b>Q13: 关联启动后无法启动，提示找不到 Gemini-CLI-Termux?</b></summary>
+<summary><b>Q13：关联启动后无法启动，提示找不到 Gemini-CLI-Termux？</b></summary>
 
-**A:** 这是因为您开启了关联启动但未安装 Gemini-CLI-Termux。
+**A：** 这是因为您开启了关联启动但未安装 Gemini-CLI-Termux。
 
-**解决方案 1 - 安装依赖:**
-1. 安装 Gemini-CLI-Termux: 访问 [Gemini-CLI-Termux 项目页](https://github.com/print-yuhuan/Gemini-CLI-Termux)
-2. 确保安装 Python: `pkg install python`
+**解决方案 1 — 安装依赖：**
+1. 安装 Gemini-CLI-Termux：访问 [Gemini-CLI-Termux 项目页](https://github.com/print-yuhuan/Gemini-CLI-Termux)
+2. 确保安装 Python：`pkg install python`
 3. 重新启动酒馆
 
-**解决方案 2 - 关闭关联启动:**
+**解决方案 2 — 关闭关联启动：**
 1. 进入主菜单，选择 `3. 酒馆配置` → `3. 关联启动配置`
 2. 选择 `2. 关闭关联启动`
 3. 重新启动酒馆
 </details>
 
 <details>
-<summary><b>Q14: 如何查看反代服务是否正常运行?</b></summary>
+<summary><b>Q14：如何查看反代服务是否正常运行？</b></summary>
 
-**A:** 通过以下方式检查反代服务状态:
+**A：** 通过以下方式检查反代服务状态：
 
-**方法 1 - 查看日志:**
+**方法 1 — 查看日志：**
 1. 进入主菜单，选择 `3. 酒馆配置` → `3. 关联启动配置`
 2. 选择 `3. 查看反代日志`
 3. 查看日志输出是否有错误信息
 
-**方法 2 - 检查进程:**
-在 Termux 中执行: `pgrep -f "python.*run.py"`
-- 如果有输出进程 ID，说明反代服务正在运行
-- 如果无输出，说明反代服务未运行或已崩溃
+**方法 2 — 检查进程：**
+在 Termux 中执行：`pgrep -f "python.*run.py"`
+- 有输出进程 ID → 反代服务正在运行
+- 无输出 → 反代服务未运行或已崩溃
 
-**方法 3 - 测试连接:**
+**方法 3 — 测试连接：**
 根据 Gemini-CLI-Termux 的配置测试反代 API 是否可访问
 </details>
 
@@ -493,9 +515,9 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 <summary><b>Q15：脚本是否支持自定义配置？</b></summary>
 
 **A：** 支持。高级用户可以通过以下方式自定义：
-- 编辑 `$HOME/.sillytavern-termux.conf` 修改用户配置（如 `START_MODE`）
-- 编辑 `$HOME/SillyTavern-Termux/config/base.sh` 修改全局默认配置（版本号、链接等）
-- 编辑 `$HOME/SillyTavern/config.yaml` 自定义 SillyTavern 配置
+- 编辑 `~/.sillytavern-termux.conf` 修改用户配置（如 `START_MODE`）
+- 编辑 `~/SillyTavern-Termux/config/base.sh` 修改全局默认配置（版本号、链接等）
+- 编辑 `~/SillyTavern/config.yaml` 自定义 SillyTavern 配置
 
 建议在修改前备份原始文件。
 </details>
@@ -560,7 +582,7 @@ Bug 报告<br>功能请求<br>公开讨论
 为了更快地解决问题，请在反馈时提供以下信息：
 
 - 📱 **设备信息**：手机型号、Android 版本
-- 📦 **软件版本**：Termux 版本、脚本版本
+- 📦 **软件版本**：Termux 版本、脚本版本（可在"关于脚本"中查看）
 - 📋 **问题描述**：详细的错误信息或截图
 - 🔄 **复现步骤**：如何触发该问题
 
@@ -591,7 +613,8 @@ Bug 报告<br>功能请求<br>公开讨论
 
 - 使用清晰的变量和函数命名
 - 添加必要的注释说明
-- 保持与现有代码风格一致
+- 保持与现有代码风格一致（Shebang 行：`#!/data/data/com.termux/files/usr/bin/bash`）
+- 每个 `lib/*.sh` 文件只定义函数，不含顶层可执行代码
 - 测试你的更改确保功能正常
 
 ---
@@ -612,7 +635,7 @@ Bug 报告<br>功能请求<br>公开讨论
 
 ### 商业授权
 
-本项目禁止用于商业用途，请通过以下方式联系作者：
+本项目禁止用于商业用途，如有需要请通过以下方式联系作者：
 
 - 📧 邮件：print.yuhuan@gmail.com
 - 💬 QQ 群：807134015

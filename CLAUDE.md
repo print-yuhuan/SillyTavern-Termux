@@ -51,8 +51,8 @@ All `lib/*.sh` files are sourced alphabetically at startup. Every file defines f
 | File | Exported function(s) |
 |---|---|
 | `ui.sh` | `get_version`, `press_any_key` |
-| `network.sh` | network utility helpers |
-| `storage.sh` | storage permission helpers |
+| `network.sh` | `get_lan_ipv4` |
+| `storage.sh` | `check_storage_permission` |
 | `main_menu.sh` | `main_menu` |
 | `tavern_start.sh` | `start_tavern` |
 | `tavern_update.sh` | `update_tavern` |
@@ -60,14 +60,14 @@ All `lib/*.sh` files are sourced alphabetically at startup. Every file defines f
 | `lan_config.sh` | `lan_config_menu` |
 | `startup_assoc.sh` | `startup_association_menu` |
 | `plugin_menu.sh` | `plugin_menu` |
-| `plugin_install.sh` | `install_plugin_*` |
-| `plugin_uninstall.sh` | `uninstall_plugin_*` |
+| `plugin_install.sh` | `plugin_install_menu` |
+| `plugin_uninstall.sh` | `plugin_uninstall_menu` |
 | `maintenance_menu.sh` | `maintenance_menu` |
 | `dependencies.sh` | `show_dependencies`, `fix_dependencies` |
 | `backup_export.sh` | `export_tavern_data`, `export_tavern_full` |
 | `backup_import.sh` | `import_tavern_data`, `import_tavern_full` |
-| `version_tags.sh` | `version_tags_menu` |
-| `version_switch.sh` | `version_switch_menu` |
+| `version_tags.sh` | `show_version_tags`, `show_version_switch_help` |
+| `version_switch.sh` | `switch_tavern_version`, `version_switch_menu` |
 | `script_manage_menu.sh` | `script_manage_menu` |
 | `script_update.sh` | `check_update`, `show_update_log` |
 | `uninstall.sh` | `uninstall_all` |
@@ -101,7 +101,10 @@ main_menu
 │   ├── 1-2 show/fix dependencies
 │   ├── 3-4 export data/full
 │   ├── 5-6 import data/full
-│   └── 7 version_switch_menu → version_tags_menu
+│   └── 7 version_switch_menu
+│       ├── 1 show_version_tags
+│       ├── 2 switch_tavern_version
+│       └── 3 show_version_switch_help
 ├── 6 script_manage_menu
 │   ├── 1 check_update        (git pull ~/SillyTavern-Termux, version via REMOTE_BASE_URL)
 │   ├── 2 show_update_log
@@ -116,5 +119,8 @@ main_menu
 - **`$SILLYTAVERN_DIR`**: `~/SillyTavern` — the SillyTavern app itself (separate repo).
 - **`$USER_CONF`**: `~/.sillytavern-termux.conf` — only writable user state. When modifying `START_MODE`, always also update the in-memory variable (e.g., `START_MODE=2`) so the menu reflects it immediately without re-sourcing.
 - **Inline colors in bootstrap**: `start.sh`'s bootstrap section cannot source `config/base.sh`, so color variables must be defined inline there.
-- **`check_update` version source**: fetches `$REMOTE_BASE_URL` (remote `config/base.sh`), compares `INSTALL_VERSION`/`MENU_VERSION`. Update is performed with `git -C "$SCRIPT_DIR" pull origin main`.
+- **`check_update` version source**: fetches `$REMOTE_BASE_URL` (remote `config/base.sh`), compares `INSTALL_VERSION`/`MENU_VERSION`. Update is performed with `git -C "$SCRIPT_DIR" pull origin main`. On success, re-executes via `exec bash "$SCRIPT_DIR/start.sh"` to apply changes immediately.
+- **`update_tavern`**: uses `git reset --hard origin/release` — a hard reset. Local modifications to SillyTavern source files are discarded; user data in `data/` is untouched.
+- **`uninstall_all`**: removes `~/SillyTavern`, `~/.sillytavern-termux.conf`, `~/Menu.sh`, `~/Install.sh`, and cleans autostart entries from shell profiles. Does **not** remove `~/SillyTavern-Termux` (the management repo itself).
+- **`start_tavern` wake lock**: calls `termux-wake-lock` before launching SillyTavern and sets a `trap` to call `termux-wake-unlock` on function return.
 - **`Menu.sh`**: Legacy monolithic file still present in repo root for reference only. All active logic lives in `lib/`.
