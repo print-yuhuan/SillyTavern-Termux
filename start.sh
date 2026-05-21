@@ -23,19 +23,52 @@ if [ ! -f "$SCRIPT_DIR/config/base.sh" ]; then
         echo -e "${RED}${BOLD}>> 检测到非 Termux 环境，请在 Termux 中执行此脚本！${NC}"
         exit 1
     fi
+    _REQUIRED_VC=1022
+    _REQUIRED_VN="v0.119.0-beta.3"
+    _TERMUX_DL_URL="https://github.com/termux/termux-app/releases/tag/v0.119.0-beta.3"
+    _CURRENT_VC="${TERMUX_APP__APP_VERSION_CODE}"
+    if [ -z "$_CURRENT_VC" ] || [ "$_CURRENT_VC" != "$_REQUIRED_VC" ]; then
+        if [ -z "$_CURRENT_VC" ]; then
+            echo -e "${RED}${BOLD}>> 无法读取 Termux 版本号，当前版本可能过低或不兼容。${NC}"
+        else
+            echo -e "${RED}${BOLD}>> 当前 Termux 版本号：${_CURRENT_VC}，不符合要求。${NC}"
+        fi
+        echo -e "${YELLOW}${BOLD}>> 本脚本需要 Termux ${_REQUIRED_VN}（版本号：${_REQUIRED_VC}）。${NC}"
+        echo -e "${CYAN}${BOLD}>> 按回车键前往下载页面并退出...${NC}"
+        read -r
+        termux-open-url "$_TERMUX_DL_URL"
+        exit 1
+    fi
     echo -e "${GREEN}${BOLD}>> 步骤 1/3 完成：环境检测通过。${NC}"
 
-    # ==== 步骤 2/3：确保 git 可用 ====
-    echo -e "\n${CYAN}${BOLD}==== 步骤 2/3：检测 git ====${NC}"
+    # ==== 步骤 2/3：更新包管理器 ====
+    echo -e "\n${CYAN}${BOLD}==== 步骤 2/3：更新包管理器 ====${NC}"
+    _mirror_source="$PREFIX/etc/termux/mirrors/europe/packages.termux.dev"
+    _mirror_target="$PREFIX/etc/termux/chosen_mirrors"
+    if [ -f "$_mirror_source" ]; then
+        mkdir -p "$(dirname "$_mirror_target")"
+        ln -sf "$_mirror_source" "$_mirror_target"
+        echo -e "${GREEN}${BOLD}>> 已配置 Termux 官方镜像源。${NC}"
+    else
+        echo -e "${YELLOW}${BOLD}>> 未检测到官方镜像配置，保留当前镜像设置。${NC}"
+    fi
+    if ! pkg update; then
+        echo -e "${RED}${BOLD}>> 软件包索引更新失败，请检查网络连接。${NC}"
+        exit 1
+    fi
+    if ! pkg upgrade -y -o Dpkg::Options::="--force-confnew"; then
+        echo -e "${RED}${BOLD}>> 软件包升级失败，请确认网络连接和磁盘空间。${NC}"
+        exit 1
+    fi
     if ! command -v git >/dev/null 2>&1; then
         echo -e "${YELLOW}${BOLD}>> 检测到 git 未安装，正在安装...${NC}"
-        pkg update -y && pkg install -y git \
+        pkg install -y git \
             || { echo -e "${RED}${BOLD}>> git 安装失败，请检查网络连接。${NC}"; exit 1; }
         echo -e "${GREEN}${BOLD}>> git 安装成功。${NC}"
     else
         echo -e "${GREEN}${BOLD}>> git 已安装，跳过。${NC}"
     fi
-    echo -e "${GREEN}${BOLD}>> 步骤 2/3 完成：git 已就绪。${NC}"
+    echo -e "${GREEN}${BOLD}>> 步骤 2/3 完成：包管理器已更新。${NC}"
 
     # ==== 步骤 3/3：克隆或更新管理脚本仓库 ====
     echo -e "\n${CYAN}${BOLD}==== 步骤 3/3：获取管理脚本 ====${NC}"
