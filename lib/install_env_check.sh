@@ -10,23 +10,6 @@ install_step1_env_check() {
         echo -e "${RED}${BOLD}>> 检测到非 Termux 环境，请在 Termux 中执行此脚本！${NC}"
         exit 1
     fi
-    local _required_vc=1022
-    local _required_vn="v0.119.0-beta.3"
-    local _download_url="https://github.com/termux/termux-app/releases/tag/v0.119.0-beta.3"
-    local _current_vc="${TERMUX_APP__APP_VERSION_CODE}"
-    if [ -z "$_current_vc" ] || [ "$_current_vc" != "$_required_vc" ]; then
-        if [ -z "$_current_vc" ]; then
-            echo -e "${RED}${BOLD}>> 无法读取 Termux 版本号，当前版本可能过低或不兼容。${NC}"
-        else
-            echo -e "${RED}${BOLD}>> 当前 Termux 版本号：${_current_vc}，不符合要求。${NC}"
-        fi
-        echo -e "${YELLOW}${BOLD}>> 本脚本需要 Termux ${_required_vn}（版本号：${_required_vc}）。${NC}"
-        echo -e "${CYAN}${BOLD}>> 按回车键前往下载页面并退出...${NC}"
-        read -r
-        termux-open-url "$_download_url"
-        exit 1
-    fi
-
     STORAGE_DIR="$HOME/storage/shared"
     if [ ! -d "$STORAGE_DIR" ]; then
         echo -e "${YELLOW}${BOLD}>> 未检测到存储权限，尝试自动获取...${NC}"

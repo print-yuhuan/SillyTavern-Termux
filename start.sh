@@ -23,22 +23,6 @@ if [ ! -f "$SCRIPT_DIR/config/base.sh" ]; then
         echo -e "${RED}${BOLD}>> 检测到非 Termux 环境，请在 Termux 中执行此脚本！${NC}"
         exit 1
     fi
-    _REQUIRED_VC=1022
-    _REQUIRED_VN="v0.119.0-beta.3"
-    _TERMUX_DL_URL="https://github.com/termux/termux-app/releases/tag/v0.119.0-beta.3"
-    _CURRENT_VC="${TERMUX_APP__APP_VERSION_CODE}"
-    if [ -z "$_CURRENT_VC" ] || [ "$_CURRENT_VC" != "$_REQUIRED_VC" ]; then
-        if [ -z "$_CURRENT_VC" ]; then
-            echo -e "${RED}${BOLD}>> 无法读取 Termux 版本号，当前版本可能过低或不兼容。${NC}"
-        else
-            echo -e "${RED}${BOLD}>> 当前 Termux 版本号：${_CURRENT_VC}，不符合要求。${NC}"
-        fi
-        echo -e "${YELLOW}${BOLD}>> 本脚本需要 Termux ${_REQUIRED_VN}（版本号：${_REQUIRED_VC}）。${NC}"
-        echo -e "${CYAN}${BOLD}>> 按回车键前往下载页面并退出...${NC}"
-        read -r
-        termux-open-url "$_TERMUX_DL_URL"
-        exit 1
-    fi
     echo -e "${GREEN}${BOLD}>> 步骤 1/3 完成：环境检测通过。${NC}"
 
     # ==== 步骤 2/3：更新包管理器 ====
