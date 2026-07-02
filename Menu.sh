@@ -17,60 +17,58 @@ BRIGHT_MAGENTA='\033[1;95m'
 NC='\033[0m'
 
 # ==== 版本与远程资源 ====
-MENU_VERSION=20260618
-UPDATE_DATE="2026-06-18"
+MENU_VERSION=20260702
+UPDATE_DATE="2026-07-02"
 UPDATE_CONTENT="
 ===============================================
-SillyTavern-Termux 更新日志 2026-06-18
+SillyTavern-Termux 更新日志 2026-07-02
 ===============================================
 
-本次更新优化了依赖安装流程，增强了安装稳定性和可靠性。
+本次更新围绕数据安全与稳定性进行全面加固。
 
 ───────────────────────────────────────────────
-【功能优化】
+【数据安全】
 ───────────────────────────────────────────────
-  ● 依赖安装流程优化
-      - 统一清理策略：在依赖安装前强制清理缓存
-      - 新增 npm cache clean --force 命令，确保使用最新依赖
-      - 删除旧的 node_modules 目录
-      - 重试等待时间延长到 3 秒，提高稳定性
+  ● 导入酒馆数据/本体流程重构
+      - 先校验压缩包完整性，再解压到临时目录
+      - 全部成功后才替换现有数据，损坏备份不再导致数据丢失
+  ● 导出酒馆本体不再打包 node_modules
+      - 导出更快、体积更小
+      - 导入后首次启动会自动安装依赖
 
-  ● 受影响功能模块
-      - 安装脚本 (Install.sh)：初次安装依赖时
-      - 更新功能 (Menu.sh update_tavern)：更新酒馆时
-      - 版本切换 (Menu.sh switch_tavern_version)：切换版本时
-
-  ● 版本说明更新
-      - 更新稳定版本示例到 1.13.4
-      - 与官方最新稳定版本保持同步
+───────────────────────────────────────────────
+【更新机制】
+───────────────────────────────────────────────
+  ● 版本号以脚本文件本体为准，更新失败不再误判为最新
+  ● 脚本更新不再覆盖 .env，关联启动等本地配置不会丢失
+  ● 自更新改为临时文件 + 原子替换，避免自我覆盖风险
+  ● 移除 ping 网络检测，禁 ICMP 的网络也能正常检查更新
 
 ───────────────────────────────────────────────
 【问题修复】
 ───────────────────────────────────────────────
-  ✓ 修复依赖安装可能因缓存问题导致的失败
-  ✓ 修复版本切换时残留缓存导致的兼容性问题
-  ✓ 优化重试机制，减少依赖安装失败率
+  ✓ 字体下载增加 HTTP 错误检测，错误页面不再存为字体文件
+  ✓ 修复依赖环境：镜像配置先检查后链接，并补装 zip
+  ✓ 更新酒馆：远程分支缺失或代码更新失败时及时中止
+  ✓ 关联启动：退出酒馆后自动关闭后台反代进程
+  ✓ 安装 Discord 改用 termux-open，兼容新版 Android
+  ✓ 修正多处提示文案中引号无法显示的问题
 
 ───────────────────────────────────────────────
-【技术细节】
+【功能优化】
 ───────────────────────────────────────────────
-  ● 清理顺序
-      1. 删除 node_modules 目录
-      2. 清空 npm 缓存
-      3. 重新安装依赖
-
-  ● 适用场景
-      - 首次安装 SillyTavern
-      - 更新 SillyTavern 到最新版本
-      - 在 release 和标签版本之间切换
-      - 依赖安装失败需要重试时
+  ● 依赖安装重试逻辑统一为公共函数
+      - 首次安装不再强制清空 npm 缓存，失败重试时才清理
+      - 安装参数增加 --prefer-offline，弱网环境更稳定
+  ● 开启网络监听后增加设置密码的安全提醒
+  ● 获取内网地址不再误返回移动数据 IP
+  ● 配置类菜单操作改用绝对路径，不再改变当前工作目录
 
 ───────────────────────────────────────────────
 【注意事项】
 ───────────────────────────────────────────────
-  ⚠️ 清理缓存会删除本地缓存的包文件，首次安装需要重新下载
-  ⚠️ 在网络较差的环境下，依赖安装可能需要更长时间
-  ⚠️ 建议在稳定网络环境下进行更新或版本切换操作
+  ⚠️ 导入备份时会临时占用与备份相当的额外存储空间
+  ⚠️ 本体备份若不含依赖，恢复后首次启动需联网安装
 
 ===============================================
 "
@@ -80,6 +78,7 @@ REMOTE_MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Term
 
 # ==== 通用函数 ====
 get_version() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2 | tr -d '\r'; }
+get_env_value() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2- | tr -d '\r' | xargs; }
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
 
 # 获取局域网 IPv4 地址(优先 WiFi/以太网，排除 VPN 和回环地址)
@@ -101,8 +100,8 @@ get_lan_ipv4() {
             esac
         done < <(ip -4 -o addr show scope global 2>/dev/null | awk '{print $2}' | uniq)
 
-        # 备用方案：获取任意非 lo/tun/ppp 接口的地址
-        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '!/ (lo|tun|ppp)/ {print $4}' | cut -d'/' -f1 | head -n1)
+        # 备用方案：获取任意非回环/VPN/蜂窝接口的地址（排除移动数据 IP）
+        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '!/ (lo|tun|ppp|rmnet|ccmni|usb)/ {print $4}' | cut -d'/' -f1 | head -n1)
         if [ -n "$ip" ]; then
             echo "$ip"
             return 0
@@ -148,7 +147,7 @@ check_storage_permission() {
             return 1
         else
             termux-setup-storage
-            echo -e "${CYAN}${BOLD}>> 请在弹出的窗口中点击"允许"授权，正在等待授权结果...${NC}"
+            echo -e "${CYAN}${BOLD}>> 请在弹出的窗口中点击“允许”授权，正在等待授权结果...${NC}"
             max_wait_time=15
             for ((i=0; i<max_wait_time; i++)); do
                 [ -d "$STORAGE_DIR" ] && break
@@ -165,6 +164,30 @@ check_storage_permission() {
     else
         return 0
     fi
+}
+
+# ==== SillyTavern 依赖安装（需在 SillyTavern 目录下调用）====
+install_st_deps() {
+    export NODE_ENV=production
+    local retry_count=0 max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        if [ $retry_count -eq 0 ]; then
+            echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
+        else
+            echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
+        fi
+        if npm install --no-audit --no-fund --loglevel=error --omit=dev --prefer-offline; then
+            return 0
+        fi
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
+            [ -d node_modules ] && rm -rf node_modules
+            [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
+            sleep 3
+        fi
+    done
+    return 1
 }
 
 # =========================================================================
@@ -283,6 +306,10 @@ start_tavern() {
             else
                 npm start
             fi
+
+            # SillyTavern 退出后同步关闭后台反代服务，避免进程残留
+            echo -e "${CYAN}${BOLD}>> SillyTavern 已停止，正在关闭反代服务...${NC}"
+            pkill -f 'python.*run.py' 2>/dev/null
         fi
 
         press_any_key
@@ -321,6 +348,13 @@ update_tavern() {
 
         remote_commit=$(git rev-parse origin/release 2>/dev/null)
 
+        if [ -z "$remote_commit" ]; then
+            echo -e "${RED}${BOLD}>> 未找到远程 release 分支，请检查仓库状态。${NC}"
+            press_any_key
+            cd "$HOME"
+            return
+        fi
+
         if [ "$local_commit" = "$remote_commit" ]; then
             echo -e "${GREEN}${BOLD}>> SillyTavern 已是最新版本，无需更新。${NC}"
             press_any_key
@@ -334,43 +368,20 @@ update_tavern() {
         fi
 
         echo -e "${CYAN}${BOLD}>> 正在拉取最新代码...${NC}"
-        git reset --hard origin/release
+        if ! git reset --hard origin/release; then
+            echo -e "${RED}${BOLD}>> 代码更新失败，已中止依赖重装。${NC}"
+            press_any_key
+            cd "$HOME"
+            return
+        fi
 
         echo -e "${CYAN}${BOLD}>> 正在更新依赖模块...${NC}"
         export NODE_ENV=production
 		
-        [ -d node_modules ] && rm -rf node_modules
-        [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
-
-        retry_count=0
-        max_retries=3
-        install_success=0
-
-        while [ $retry_count -lt $max_retries ]; do
-            if [ $retry_count -eq 0 ]; then
-                echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
-            else
-                echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
-            fi
-
-            if npm install --no-audit --no-fund --loglevel=error --omit=dev; then
-                install_success=1
-                break
-            else
-                retry_count=$((retry_count + 1))
-                if [ $retry_count -lt $max_retries ]; then
-                    echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                    [ -d node_modules ] && rm -rf node_modules
-                    [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
-                    sleep 3
-                fi
-            fi
-        done
-
-        if [ $install_success -eq 1 ]; then
+        if install_st_deps; then
             echo -e "${GREEN}${BOLD}>> SillyTavern 更新完成，代码和依赖均已更新。${NC}"
         else
-            echo -e "${RED}${BOLD}>> 代码更新成功，但依赖安装失败，已重试 $max_retries 次。${NC}"
+            echo -e "${RED}${BOLD}>> 代码更新成功，但依赖安装失败，已重试 3 次。${NC}"
             echo -e "${YELLOW}${BOLD}>> 请检查网络连接后，手动执行依赖安装或重新尝试更新。${NC}"
         fi
 
@@ -403,12 +414,15 @@ tavern_config_menu() {
             0) break ;;
             1) lan_config_menu ;;
             2)
-                cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
-                if [ ! -f start.sh ]; then
+                ST_START="$HOME/SillyTavern/start.sh"
+                if [ ! -d "$HOME/SillyTavern" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue
+                fi
+                if [ ! -f "$ST_START" ]; then
                     echo -e "${RED}${BOLD}>> [错误] 未找到 start.sh 文件，无法修改内存限制。${NC}"
                     press_any_key; continue
                 fi
-                [ ! -f start.sh.bak ] && cp start.sh start.sh.bak
+                [ ! -f "${ST_START}.bak" ] && cp "$ST_START" "${ST_START}.bak"
 
                 local error_msg=""
                 while true; do
@@ -429,11 +443,11 @@ tavern_config_menu() {
                     echo -e "${RED}${BOLD}$error_msg${NC}"
                 done
 
-                if grep -q 'node --max-old-space-size=[0-9]\+ "server.js" "\$@"' start.sh; then
-                    sed -i "s/node --max-old-space-size=[0-9]\+ \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" start.sh
+                if grep -q 'node --max-old-space-size=[0-9]\+ "server.js" "\$@"' "$ST_START"; then
+                    sed -i "s/node --max-old-space-size=[0-9]\+ \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" "$ST_START"
                     echo -e "${GREEN}${BOLD}>> 内存限制已设置为 ${mem_limit} MB。${NC}"
-                elif grep -q 'node "server.js" "\$@"' start.sh; then
-                    sed -i "s/node \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" start.sh
+                elif grep -q 'node "server.js" "\$@"' "$ST_START"; then
+                    sed -i "s/node \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" "$ST_START"
                     echo -e "${GREEN}${BOLD}>> 已插入内存限制参数，现为 ${mem_limit} MB。${NC}"
                 else
                     echo -e "${CYAN}${BOLD}>> 未检测到标准 node 启动命令，未做更改。${NC}"
@@ -443,22 +457,28 @@ tavern_config_menu() {
                 ;;
             3) startup_association_menu ;;
             4)
-                cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
-                if [ ! -f start.sh.bak ]; then
+                ST_START="$HOME/SillyTavern/start.sh"
+                if [ ! -d "$HOME/SillyTavern" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue
+                fi
+                if [ ! -f "${ST_START}.bak" ]; then
                     echo -e "${MAGENTA}${BOLD}>> 未找到 start.sh.bak 备份文件，无法恢复。${NC}"
                     press_any_key; continue
                 fi
-                cp start.sh.bak start.sh
+                cp "${ST_START}.bak" "$ST_START"
                 echo -e "${YELLOW}${BOLD}>> 启动文件已恢复为初始版本。${NC}"
                 press_any_key
                 ;;
             5)
-                cd "$HOME/SillyTavern" 2>/dev/null || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue; }
-                if [ ! -f config.yaml.bak ]; then
+                ST_CONFIG="$HOME/SillyTavern/config.yaml"
+                if [ ! -d "$HOME/SillyTavern" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue
+                fi
+                if [ ! -f "${ST_CONFIG}.bak" ]; then
                     echo -e "${BRIGHT_MAGENTA}${BOLD}>> 未找到 config.yaml.bak 备份文件，无法恢复。${NC}"
                     press_any_key; continue
                 fi
-                cp config.yaml.bak config.yaml
+                cp "${ST_CONFIG}.bak" "$ST_CONFIG"
                 echo -e "${YELLOW}${BOLD}>> 配置文件已恢复为初始状态。${NC}"
                 press_any_key
                 ;;
@@ -484,30 +504,39 @@ lan_config_menu() {
         case "$lan_choice" in
             0) break ;;
             1)
-                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
-                if [ ! -f config.yaml ]; then
+                ST_CONFIG="$HOME/SillyTavern/config.yaml"
+                if [ ! -d "$HOME/SillyTavern" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue
+                fi
+                if [ ! -f "$ST_CONFIG" ]; then
                     echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法开启监听。${NC}"
                     press_any_key; continue
                 fi
-                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
-                sed -i 's/^listen: false$/listen: true/' config.yaml
-                sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' config.yaml
-                sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' config.yaml
-                sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' config.yaml
+                [ ! -f "${ST_CONFIG}.bak" ] && cp "$ST_CONFIG" "${ST_CONFIG}.bak"
+                sed -i 's/^listen: false$/listen: true/' "$ST_CONFIG"
+                sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' "$ST_CONFIG"
+                sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' "$ST_CONFIG"
+                sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' "$ST_CONFIG"
                 echo -e "${GREEN}${BOLD}>> 网络监听已开启，允许外部设备访问。${NC}"
+                echo -e "${RED}${BOLD}>> 安全提醒：默认用户没有密码！${NC}"
+                echo -e "${YELLOW}${BOLD}>> 请启动酒馆后在「用户设置 → 管理用户」中为账户设置密码，${NC}"
+                echo -e "${YELLOW}${BOLD}>> 否则同一网络内的任何人都可访问你的聊天记录与 API 密钥。${NC}"
                 press_any_key
                 ;;
             2)
-                cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue; }
-                if [ ! -f config.yaml ]; then
+                ST_CONFIG="$HOME/SillyTavern/config.yaml"
+                if [ ! -d "$HOME/SillyTavern" ]; then
+                    echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录，无法操作。${NC}"; press_any_key; continue
+                fi
+                if [ ! -f "$ST_CONFIG" ]; then
                     echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法关闭监听。${NC}"
                     press_any_key; continue
                 fi
-                [ ! -f config.yaml.bak ] && cp config.yaml config.yaml.bak
-                sed -i 's/^listen: true$/listen: false/' config.yaml
-                sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' config.yaml
-                sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' config.yaml
-                sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' config.yaml
+                [ ! -f "${ST_CONFIG}.bak" ] && cp "$ST_CONFIG" "${ST_CONFIG}.bak"
+                sed -i 's/^listen: true$/listen: false/' "$ST_CONFIG"
+                sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' "$ST_CONFIG"
+                sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' "$ST_CONFIG"
+                sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' "$ST_CONFIG"
                 echo -e "${RED}${BOLD}>> 网络监听已关闭，仅限本机访问。${NC}"
                 press_any_key
                 ;;
@@ -548,7 +577,7 @@ lan_config_menu() {
                 echo -e "  ${BOLD}2. 获取内网地址（如已知且无变动可跳过）${NC}"
                 echo -e "    - 若设备重启、WiFi重连、网络切换，内网IP可能变动，需重新获取。\n"
                 echo -e "  ${BOLD}3. 启动酒馆服务${NC}"
-                echo -e "    - 返回主菜单，选择"启动酒馆"，务必保持终端窗口运行。\n"
+                echo -e "    - 返回主菜单，选择“启动酒馆”，务必保持终端窗口运行。\n"
                 echo -e "  ${BOLD}4. 其他设备访问${NC}"
                 echo -e "    - 在同网络下的手机、电脑等浏览器输入上一步获取的网址访问 SillyTavern。\n"
 
@@ -558,7 +587,7 @@ lan_config_menu() {
                 echo -e "  - 本机和目标设备都连同一WiFi路由器。"
                 echo -e "  - 直接在浏览器输入 $ip_display 访问。\n"
                 echo -e "${CYAN}${BOLD}方式二：目标设备连接本机热点${NC}"
-                echo -e "  - 本机开启"个人热点"，目标设备连接该热点。"
+                echo -e "  - 本机开启“个人热点”，目标设备连接该热点。"
                 echo -e "  - 浏览器输入 $ip_display 访问。\n"
                 echo -e "${CYAN}${BOLD}方式三：本机连接目标设备热点${NC}"
                 echo -e "  - 目标设备开启热点，本机连接该热点。"
@@ -903,8 +932,8 @@ plugin_menu() {
 # =========================================================================
 show_dependencies() {
     echo -e "\n${CYAN}${BOLD}==== 依赖版本信息 ====${NC}"
-    echo -ne "${BLUE}${BOLD}git:   ${NC}"; git --version
-    echo -ne "${GREEN}${BOLD}node:  ${NC}"; node -v
+    echo -ne "${BLUE}${BOLD}git:   ${NC}"; command -v git >/dev/null 2>&1 && git --version || echo -e "${RED}${BOLD}未安装${NC}"
+    echo -ne "${GREEN}${BOLD}node:  ${NC}"; command -v node >/dev/null 2>&1 && node -v || echo -e "${RED}${BOLD}未安装${NC}"
     echo -ne "${MAGENTA}${BOLD}npm:   ${NC}"; command -v npm >/dev/null 2>&1 && npm -v || echo -e "${RED}${BOLD}未安装${NC}"
     echo -ne "${YELLOW}${BOLD}curl:  ${NC}"; command -v curl >/dev/null 2>&1 && curl --version | head -n1 || echo -e "${RED}${BOLD}未安装${NC}"
     echo -e "${CYAN}${BOLD}======================${NC}"
@@ -913,9 +942,15 @@ show_dependencies() {
 
 fix_dependencies() {
     echo -e "\n${CYAN}${BOLD}==== 修复依赖环境 ====${NC}"
-    ln -sf /data/data/com.termux/files/usr/etc/termux/mirrors/europe/packages.termux.dev /data/data/com.termux/files/usr/etc/termux/chosen_mirrors
+    mirror_source="$PREFIX/etc/termux/mirrors/europe/packages.termux.dev"
+    mirror_target="$PREFIX/etc/termux/chosen_mirrors"
+    if [ -f "$mirror_source" ]; then
+        ln -sf "$mirror_source" "$mirror_target"
+    else
+        echo -e "${YELLOW}${BOLD}>> 未检测到官方镜像配置，保留当前镜像配置。${NC}"
+    fi
     pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confnew"
-    for dep in git curl unzip; do
+    for dep in git curl zip unzip; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
             pkg install -y $dep
@@ -934,7 +969,7 @@ fix_dependencies() {
     else
         echo -e "${GREEN}${BOLD}>> node 已安装，跳过。${NC}"
     fi
-    npm config set prefix $PREFIX
+    npm config set prefix "$PREFIX"
     echo -e "${GREEN}${BOLD}>> 依赖修复完成。${NC}"
     press_any_key
 }
@@ -1023,7 +1058,8 @@ export_tavern_full() {
         return
     fi
     now=$(date +%Y%m%d_%H%M%S)
-    zip -r "SillyTavern_${now}.zip" SillyTavern
+    echo -e "${CYAN}${BOLD}>> 正在打包酒馆本体（已排除 node_modules，导入后首次启动会自动安装依赖）...${NC}"
+    zip -r "SillyTavern_${now}.zip" SillyTavern -x "SillyTavern/node_modules/*"
     mv "SillyTavern_${now}.zip" "$BACKUP_DIR/" 2>/dev/null \
         && echo -e "${GREEN}${BOLD}>> 导出完成，已保存到 SillyTavern 文件夹。${NC}" \
         || echo -e "${RED}${BOLD}>> 移动压缩包失败，请手动查找。${NC}"
@@ -1080,57 +1116,60 @@ import_tavern_data() {
                 press_any_key; return
             fi
 
-            # 检查备份文件中包含哪些目录
-            has_data_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -c '^.*data/' || echo 0)
-            has_public_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -c '^.*public/' || echo 0)
-
-            # 准备删除和恢复的目录列表
-            dirs_to_remove=""
-            dirs_info=""
-
-            if [ "$has_data_in_zip" -gt 0 ]; then
-                TARGET_DATA_DIR="$HOME/SillyTavern/data"
-                if [ -d "$TARGET_DATA_DIR" ]; then
-                    dirs_to_remove="$dirs_to_remove $TARGET_DATA_DIR"
-                fi
-                dirs_info="${dirs_info}data "
-            fi
-
-            if [ "$has_public_in_zip" -gt 0 ]; then
-                TARGET_PUBLIC_DIR="$HOME/SillyTavern/public"
-                if [ -d "$TARGET_PUBLIC_DIR" ]; then
-                    dirs_to_remove="$dirs_to_remove $TARGET_PUBLIC_DIR"
-                fi
-                dirs_info="${dirs_info}public "
-            fi
+            # 检查备份文件中包含哪些目录（unzip -l 的 Name 列前必有空白，避免子串误判）
+            has_data_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -Ec '[[:space:]]data/')
+            has_public_in_zip=$(unzip -l "$selected_file" 2>/dev/null | grep -Ec '[[:space:]]public/')
 
             if [ "$has_data_in_zip" -eq 0 ] && [ "$has_public_in_zip" -eq 0 ]; then
                 echo -e "${YELLOW}${BOLD}>> 警告：备份文件中未检测到 data 或 public 目录。${NC}"
                 press_any_key; return
             fi
 
-            # 如果有目录需要覆盖，则提示用户确认
-            if [ -n "$dirs_to_remove" ]; then
-                echo -e "${YELLOW}${BOLD}>> 警告：将要覆盖以下目录：${dirs_info}${NC}"
-                echo -e "${YELLOW}${BOLD}>> 继续操作将彻底删除这些目录及其所有内容，然后从备份恢复。${NC}"
-                echo -e "${YELLOW}${BOLD}>> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
-                read -n1 confirm; echo
-                if ! [[ "$confirm" =~ [yY] ]]; then
-                    echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
-                    press_any_key; return
-                fi
-                # 删除要覆盖的目录
-                for dir in $dirs_to_remove; do
-                    rm -rf "$dir"
-                done
+            dirs_info=""
+            [ "$has_data_in_zip" -gt 0 ] && dirs_info="${dirs_info}data "
+            [ "$has_public_in_zip" -gt 0 ] && dirs_info="${dirs_info}public "
+
+            echo -e "${YELLOW}${BOLD}>> 警告：将要覆盖以下目录：${dirs_info}${NC}"
+            echo -e "${YELLOW}${BOLD}>> 继续操作将删除这些目录并从备份恢复。${NC}"
+            echo -e "${YELLOW}${BOLD}>> 是否确认覆盖？(y/n)：${NC}\c"
+            read -n1 confirm; echo
+            if ! [[ "$confirm" =~ [yY] ]]; then
+                echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
+                press_any_key; return
             fi
 
-            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复 ${dirs_info}目录...${NC}"
-            mkdir -p "$HOME/SillyTavern"
-            if unzip -o "$selected_file" -d "$HOME/SillyTavern/" >/dev/null 2>&1; then
-                echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
+            # 先校验、后解压到临时目录，全部成功后才替换现有数据
+            echo -e "${CYAN}${BOLD}>> 正在校验备份文件完整性...${NC}"
+            if ! unzip -t "$selected_file" >/dev/null 2>&1; then
+                echo -e "${RED}${BOLD}>> 备份文件已损坏，已中止恢复（未改动现有数据）。${NC}"
+                press_any_key; return
+            fi
+
+            TMP_RESTORE=$(mktemp -d "$HOME/.st_restore.XXXXXX") || {
+                echo -e "${RED}${BOLD}>> 创建临时目录失败，已中止恢复。${NC}"
+                press_any_key; return
+            }
+            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 解压 ${dirs_info}目录...${NC}"
+            if ! unzip -o "$selected_file" -d "$TMP_RESTORE" >/dev/null 2>&1; then
+                rm -rf "$TMP_RESTORE"
+                echo -e "${RED}${BOLD}>> 解压失败，已中止恢复（未改动现有数据）。${NC}"
+                press_any_key; return
+            fi
+
+            restored=""
+            for d in data public; do
+                if [ -d "$TMP_RESTORE/$d" ]; then
+                    rm -rf "$HOME/SillyTavern/$d"
+                    mv "$TMP_RESTORE/$d" "$HOME/SillyTavern/$d"
+                    restored="${restored}$d "
+                fi
+            done
+            rm -rf "$TMP_RESTORE"
+
+            if [ -n "$restored" ]; then
+                echo -e "${GREEN}${BOLD}>> 恢复成功（${restored}）！建议重启 SillyTavern 以应用更改。${NC}"
             else
-                echo -e "${RED}${BOLD}>> 恢复失败，请检查压缩包是否完整或存储权限。${NC}"
+                echo -e "${YELLOW}${BOLD}>> 压缩包中未找到顶层 data/public 目录，未做任何更改。${NC}"
             fi
             press_any_key; return
         else
@@ -1188,22 +1227,43 @@ import_tavern_full() {
             TARGET_DIR="$HOME/SillyTavern"
             if [ -d "$TARGET_DIR" ]; then
                 echo -e "${YELLOW}${BOLD}>> 警告：目标目录 ${TARGET_DIR} 已存在。"
-                echo -e ">> 继续操作将彻底删除该目录及其所有内容，然后从备份恢复。"
-                echo -e ">> 此操作不可撤销！是否确认覆盖？(y/n)：${NC}\c"
+                echo -e ">> 继续操作将删除该目录并从备份恢复。"
+                echo -e ">> 是否确认覆盖？(y/n)：${NC}\c"
                 read -n1 confirm; echo
                 if ! [[ "$confirm" =~ [yY] ]]; then
                     echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
                     press_any_key; return
                 fi
-                rm -rf "$TARGET_DIR"
             fi
-            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 恢复至 $TARGET_DIR ...${NC}"
-            mkdir -p "$HOME"
-            if unzip -o "$selected_file" -d "$HOME/" >/dev/null 2>&1; then
-                echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
-            else
-                echo -e "${RED}${BOLD}>> 恢复失败，请检查压缩包是否完整或存储权限。${NC}"
+
+            # 先校验、后解压到临时目录，全部成功后才替换现有目录
+            echo -e "${CYAN}${BOLD}>> 正在校验备份文件完整性...${NC}"
+            if ! unzip -t "$selected_file" >/dev/null 2>&1; then
+                echo -e "${RED}${BOLD}>> 备份文件已损坏，已中止恢复（未改动现有数据）。${NC}"
+                press_any_key; return
             fi
+
+            TMP_RESTORE=$(mktemp -d "$HOME/.st_restore.XXXXXX") || {
+                echo -e "${RED}${BOLD}>> 创建临时目录失败，已中止恢复。${NC}"
+                press_any_key; return
+            }
+            echo -e "${CYAN}${BOLD}>> 正在从 $(basename "$selected_file") 解压...${NC}"
+            if ! unzip -o "$selected_file" -d "$TMP_RESTORE" >/dev/null 2>&1; then
+                rm -rf "$TMP_RESTORE"
+                echo -e "${RED}${BOLD}>> 解压失败，已中止恢复（未改动现有数据）。${NC}"
+                press_any_key; return
+            fi
+            if [ ! -d "$TMP_RESTORE/SillyTavern" ]; then
+                rm -rf "$TMP_RESTORE"
+                echo -e "${RED}${BOLD}>> 压缩包内未找到 SillyTavern 目录，已中止恢复（未改动现有数据）。${NC}"
+                press_any_key; return
+            fi
+
+            rm -rf "$TARGET_DIR"
+            mv "$TMP_RESTORE/SillyTavern" "$TARGET_DIR"
+            rm -rf "$TMP_RESTORE"
+            echo -e "${GREEN}${BOLD}>> 恢复成功！建议重启 SillyTavern 以应用更改。${NC}"
+            echo -e "${YELLOW}${BOLD}>> 若该备份不含依赖(node_modules)，首次启动时将自动安装，请保持网络畅通。${NC}"
             press_any_key; return
         else
             echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"
@@ -1399,42 +1459,12 @@ switch_tavern_version() {
     echo -e "${CYAN}${BOLD}>> 正在重新安装依赖模块...${NC}"
     export NODE_ENV=production
 
-    # 清理旧依赖
-    [ -d node_modules ] && rm -rf node_modules
-    [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
-
-    # 依赖安装重试机制
-    retry_count=0
-    max_retries=3
-    install_success=0
-
-    while [ $retry_count -lt $max_retries ]; do
-        if [ $retry_count -eq 0 ]; then
-            echo -e "${CYAN}${BOLD}>> 正在安装 SillyTavern 依赖，请耐心等待…${NC}"
-        else
-            echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
-        fi
-
-        if npm install --no-audit --no-fund --loglevel=error --omit=dev; then
-            install_success=1
-            break
-        else
-            retry_count=$((retry_count + 1))
-            if [ $retry_count -lt $max_retries ]; then
-                echo -e "${YELLOW}${BOLD}>> 依赖安装失败，正在清理缓存并准备重试…${NC}"
-                [ -d node_modules ] && rm -rf node_modules
-                [ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
-                sleep 3
-            fi
-        fi
-    done
-
-    if [ $install_success -eq 1 ]; then
+    if install_st_deps; then
         echo -e "${GREEN}${BOLD}>> 版本切换完成！当前版本：${selected_tag}${NC}"
         echo -e "${GREEN}${BOLD}>> 依赖已重新安装，可以正常使用。${NC}"
     else
-        echo -e "${RED}${BOLD}>> 版本已切换，但依赖安装失败，已重试 $max_retries 次。${NC}"
-        echo -e "${YELLOW}${BOLD}>> 请检查网络连接，或稍后在系统维护中选择"修复依赖环境"。${NC}"
+        echo -e "${RED}${BOLD}>> 版本已切换，但依赖安装失败，已重试 3 次。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 请检查网络连接，或稍后在系统维护中选择“修复依赖环境”。${NC}"
     fi
 
     press_any_key
@@ -1470,21 +1500,21 @@ show_version_switch_help() {
     echo -e "  ${BOLD}release 分支：${NC}"
     echo -e "    - 项目的主要开发分支"
     echo -e "    - 包含最新功能和修复，但可能存在不稳定因素"
-    echo -e "    - 通过"更新酒馆"功能可切换回该分支\n"
+    echo -e "    - 通过“更新酒馆”功能可切换回该分支\n"
 
     echo -e "${CYAN}${BOLD}四、注意事项${NC}"
     echo -e "  · ${BOLD}版本切换前：${NC} 建议先备份酒馆数据（系统维护 → 导出酒馆数据）"
     echo -e "  · ${BOLD}未提交更改：${NC} 切换版本会丢失未提交的文件修改，请注意保存"
     echo -e "  · ${BOLD}依赖安装：${NC} 切换版本后会自动重新安装依赖，需要良好的网络连接"
-    echo -e "  · ${BOLD}依赖失败：${NC} 若依赖安装失败，可在系统维护中选择"修复依赖环境""
-    echo -e "  · ${BOLD}回到最新：${NC} 如需回到最新版本，使用主菜单的"更新酒馆"功能\n"
+    echo -e "  · ${BOLD}依赖失败：${NC} 若依赖安装失败，可在系统维护中选择“修复依赖环境”"
+    echo -e "  · ${BOLD}回到最新：${NC} 如需回到最新版本，使用主菜单的“更新酒馆”功能\n"
 
     echo -e "${CYAN}${BOLD}五、常见问题${NC}"
     echo -e "  ${BOLD}Q：版本切换后启动失败怎么办？${NC}"
-    echo -e "  A：检查依赖是否安装成功，可尝试"系统维护 → 修复依赖环境"。\n"
+    echo -e "  A：检查依赖是否安装成功，可尝试“系统维护 → 修复依赖环境”。\n"
 
     echo -e "  ${BOLD}Q：如何回到最新的 release 分支？${NC}"
-    echo -e "  A：使用主菜单的"更新酒馆"功能，会自动切换到 release 分支。\n"
+    echo -e "  A：使用主菜单的“更新酒馆”功能，会自动切换到 release 分支。\n"
 
     echo -e "  ${BOLD}Q：切换版本会影响我的数据吗？${NC}"
     echo -e "  A：不会，用户数据存储在 data 目录，版本切换不影响该目录。\n"
@@ -1550,63 +1580,63 @@ maintenance_menu() {
 check_update() {
     TMP_ENV="$HOME/.env.remote"
     echo -e "\n${CYAN}${BOLD}==== 检查脚本更新 ====${NC}"
-    if ! ping -c 1 -W 1 github.com >/dev/null 2>&1; then
-        echo -e "${RED}${BOLD}>> 网络不可用，请检查网络连接。${NC}"
-        press_any_key; return
-    fi
-    if ! curl -fsSL -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
-        echo -e "${RED}${BOLD}>> 无法获取远程版本信息，请检查网络。${NC}"
+    if ! curl -fsSL -m 15 -o "$TMP_ENV" "$REMOTE_ENV_URL"; then
+        echo -e "${RED}${BOLD}>> 无法获取远程版本信息，请检查网络连接。${NC}"
         rm -f "$TMP_ENV"; press_any_key; return
     fi
-    if [ ! -f "$HOME/.env" ]; then
-        echo -e "${RED}${BOLD}>> 本地 .env 文件不存在，无法检测更新。${NC}"
-        rm -f "$TMP_ENV"; press_any_key; return
+    # 版本号以脚本文件本体为准；.env 仅承载 START_MODE 等本地配置，不再被更新覆盖
+    LOCAL_MENU_VERSION=$(get_version "$HOME/Menu.sh" "MENU_VERSION")
+    if [ -f "$HOME/Install.sh" ]; then
+        LOCAL_INSTALL_VERSION=$(get_version "$HOME/Install.sh" "INSTALL_VERSION")
+    else
+        LOCAL_INSTALL_VERSION=0
     fi
-    LOCAL_INSTALL_VERSION=$(get_version "$HOME/.env" "INSTALL_VERSION")
-    LOCAL_MENU_VERSION=$(get_version "$HOME/.env" "MENU_VERSION")
     REMOTE_INSTALL_VERSION=$(get_version "$TMP_ENV" "INSTALL_VERSION")
     REMOTE_MENU_VERSION=$(get_version "$TMP_ENV" "MENU_VERSION")
+    rm -f "$TMP_ENV"
     echo -e "${YELLOW}${BOLD}>> 本地 Install.sh 版本：${LOCAL_INSTALL_VERSION}${NC}"
     echo -e "${YELLOW}${BOLD}>> 远程 Install.sh 版本：${REMOTE_INSTALL_VERSION}${NC}"
     echo -e "${YELLOW}${BOLD}>> 本地 Menu.sh 版本：${LOCAL_MENU_VERSION}${NC}"
     echo -e "${YELLOW}${BOLD}>> 远程 Menu.sh 版本：${REMOTE_MENU_VERSION}${NC}"
-    if [ -z "$LOCAL_INSTALL_VERSION" ] || [ -z "$LOCAL_MENU_VERSION" ] || [ -z "$REMOTE_INSTALL_VERSION" ] || [ -z "$REMOTE_MENU_VERSION" ]; then
-        echo -e "${RED}${BOLD}>> 版本号读取失败，请检查 .env 文件格式。${NC}"
-        rm -f "$TMP_ENV"; press_any_key; return
-    fi
-    updated=0
+    for v in "$LOCAL_INSTALL_VERSION" "$LOCAL_MENU_VERSION" "$REMOTE_INSTALL_VERSION" "$REMOTE_MENU_VERSION"; do
+        if ! [[ "$v" =~ ^[0-9]+$ ]]; then
+            echo -e "${RED}${BOLD}>> 版本号读取失败，请检查脚本文件与远程配置。${NC}"
+            press_any_key; return
+        fi
+    done
+    menu_updated=0
     if [ "$LOCAL_INSTALL_VERSION" -lt "$REMOTE_INSTALL_VERSION" ]; then
         echo -e "${MAGENTA}${BOLD}>> 检测到 Install.sh 有新版本，正在更新...${NC}"
-        if curl -fsSL -o "$HOME/Install.sh" "$REMOTE_INSTALL_URL"; then
-            chmod +x "$HOME/Install.sh"
+        if curl -fsSL -o "$HOME/Install.sh.new" "$REMOTE_INSTALL_URL"; then
+            chmod +x "$HOME/Install.sh.new"
+            mv "$HOME/Install.sh.new" "$HOME/Install.sh"
             echo -e "${GREEN}${BOLD}>> Install.sh 已更新。${NC}"
-            updated=1
         else
-            echo -e "${RED}${BOLD}>> Install.sh 更新失败。${NC}"
+            rm -f "$HOME/Install.sh.new"
+            echo -e "${RED}${BOLD}>> Install.sh 更新失败，下次检查将再次尝试。${NC}"
         fi
     else
         echo -e "${GREEN}${BOLD}>> Install.sh 已是最新版本。${NC}"
     fi
     if [ "$LOCAL_MENU_VERSION" -lt "$REMOTE_MENU_VERSION" ]; then
         echo -e "${BLUE}${BOLD}>> 检测到 Menu.sh 有新版本，正在更新...${NC}"
-        if curl -fsSL -o "$HOME/Menu.sh" "$REMOTE_MENU_URL"; then
-            chmod +x "$HOME/Menu.sh"
+        # 下载到临时文件后原子替换，避免覆盖正在运行的脚本
+        if curl -fsSL -o "$HOME/Menu.sh.new" "$REMOTE_MENU_URL"; then
+            chmod +x "$HOME/Menu.sh.new"
+            mv "$HOME/Menu.sh.new" "$HOME/Menu.sh"
+            menu_updated=1
             echo -e "${GREEN}${BOLD}>> Menu.sh 已更新。${NC}"
-            updated=1
         else
-            echo -e "${RED}${BOLD}>> Menu.sh 更新失败。${NC}"
+            rm -f "$HOME/Menu.sh.new"
+            echo -e "${RED}${BOLD}>> Menu.sh 更新失败，下次检查将再次尝试。${NC}"
         fi
     else
         echo -e "${GREEN}${BOLD}>> Menu.sh 已是最新版本。${NC}"
     fi
-    if [ $updated -eq 1 ]; then
-        mv "$TMP_ENV" "$HOME/.env"
-        echo -e "${GREEN}${BOLD}>> 本地版本号已同步更新。${NC}"
+    if [ $menu_updated -eq 1 ]; then
         echo -e "${CYAN}${BOLD}>> 脚本已更新，将自动重启菜单...${NC}"
         sleep 2
         exec bash "$HOME/Menu.sh"
-    else
-        rm -f "$TMP_ENV"
     fi
     press_any_key
 }
@@ -1769,7 +1799,7 @@ install_discord_app() {
         echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
         press_any_key; return
     fi
-    DISCORD_URL=$(grep '^DISCORD_DOWNLOAD=' "$TMP_ENV" | cut -d'=' -f2- | tr -d '\r' | xargs)
+    DISCORD_URL=$(get_env_value "$TMP_ENV" "DISCORD_DOWNLOAD")
     rm -f "$TMP_ENV"
     if [ -z "$DISCORD_URL" ]; then
         echo -e "${YELLOW}${BOLD}>> 未配置 Discord 下载链接，请稍后重试。${NC}"
@@ -1785,7 +1815,12 @@ install_discord_app() {
     if curl -Lf --progress-bar -o "$DEST" "$DISCORD_URL"; then
         if [ -s "$DEST" ]; then
             echo -e "${GREEN}${BOLD}>> 下载完成，已保存到: $DEST${NC}"
-            if command -v am >/dev/null 2>&1; then
+            # 优先使用 termux-open（内部转换 content:// URI，兼容 Android 7+）
+            if command -v termux-open >/dev/null 2>&1; then
+                termux-open "$DEST" \
+                    && echo -e "${GREEN}${BOLD}>> 已调用系统安装管理器安装 Discord。${NC}" \
+                    || echo -e "${YELLOW}${BOLD}>> 未能自动调用安装管理器，请手动在文件管理中安装 Discord。${NC}"
+            elif command -v am >/dev/null 2>&1; then
                 am start -a android.intent.action.VIEW -d "file://$DEST" -t "application/vnd.android.package-archive" >/dev/null 2>&1 \
                     && echo -e "${GREEN}${BOLD}>> 已调用系统安装管理器安装 Discord。${NC}" \
                     || echo -e "${YELLOW}${BOLD}>> 未能自动调用安装管理器，请手动在文件管理中安装 Discord。${NC}"
@@ -1812,11 +1847,11 @@ community_links_menu() {
         echo -e "${RED}${BOLD}>> 远程配置文件获取失败，请检查网络。${NC}"
         press_any_key; return
     fi
-    JIUGUAN_LINK=$(grep '^JIUGUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    LEINAO_LINK=$(grep '^LEINAO_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    LVCHENG_LINK=$(grep '^LVCHENG_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    YANTING_LINK=$(grep '^YANTING_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
-    TAOYUAN_LINK=$(grep '^TAOYUAN_LINK=' "$TMP_ENV" | cut -d'=' -f2-)
+    JIUGUAN_LINK=$(get_env_value "$TMP_ENV" "JIUGUAN_LINK")
+    LEINAO_LINK=$(get_env_value "$TMP_ENV" "LEINAO_LINK")
+    LVCHENG_LINK=$(get_env_value "$TMP_ENV" "LVCHENG_LINK")
+    YANTING_LINK=$(get_env_value "$TMP_ENV" "YANTING_LINK")
+    TAOYUAN_LINK=$(get_env_value "$TMP_ENV" "TAOYUAN_LINK")
     rm -f "$TMP_ENV"
     while true; do
         clear

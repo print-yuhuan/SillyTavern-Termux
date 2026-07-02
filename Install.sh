@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20260618
+INSTALL_VERSION=20260702
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -108,7 +108,7 @@ mkdir -p "$FONT_DIR"
 if [ -f "$FONT_PATH" ]; then
     echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
 else
-    if curl -L --progress-bar -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
+    if curl -fL --progress-bar -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
         echo -e "${GREEN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
     else
         echo -e "${RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
@@ -204,9 +204,6 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 export NODE_ENV=production
 
-[ -d node_modules ] && rm -rf node_modules
-[ -d "$HOME/.npm/_cacache" ] && npm cache clean --force
-
 retry_count=0
 max_retries=3
 install_success=0
@@ -218,7 +215,7 @@ while [ $retry_count -lt $max_retries ]; do
         echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
     fi
 
-    if npm install --no-audit --no-fund --loglevel=error --omit=dev; then
+    if npm install --no-audit --no-fund --loglevel=error --omit=dev --prefer-offline; then
         install_success=1
         break
     else

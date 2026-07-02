@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2026.06.18-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2026.07.02-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 
@@ -31,6 +31,19 @@
 
 ---
 
+## 🆕 最近更新（2026.07.02）
+
+- 🛡️ **数据安全加固**：导入备份改为「先校验、后解压、成功才替换」，损坏的备份不再导致数据丢失
+- 🔄 **更新机制重构**：脚本更新不再覆盖本地配置（如关联启动设置），版本号以脚本文件本体为准，更新失败会自动重试
+- 📦 **导出瘦身**：导出酒馆本体不再打包 node_modules，速度更快、体积更小
+- 🤖 **兼容性修复**：Discord 安装改用 termux-open（兼容 Android 7+）；禁 ICMP 的网络下也能正常检查脚本更新
+- ⚡ **安装提速**：依赖安装不再强制清空 npm 缓存，仅在失败重试时清理
+- 🔐 **安全提醒**：开启局域网监听后新增「为默认用户设置密码」提示
+
+> 完整更新内容可在菜单 `6. 脚本管理` → `2. 查看更新日志` 查看。
+
+---
+
 ## ✨ 核心特性
 
 ### 🚀 极致自动化部署
@@ -40,7 +53,7 @@
 - ✅ **零配置安装**：一条命令完成环境检测、依赖安装、字体配置、主程序部署
 - ✅ **智能依赖管理**：自动检测并安装 Node.js、Git、curl 等核心依赖，失败自动重试
 - ✅ **开箱即用**：安装完成后自动配置启动项，重启 Termux 即可进入管理菜单
-- ✅ **容错机制**：网络中断自动恢复，安装失败智能回退
+- ✅ **容错机制**：依赖安装失败自动清理缓存并重试（最多 3 次），下载失败及时中止并提示
 
 ### 🛠️ 全功能管理菜单
 
@@ -69,7 +82,7 @@
 
 **连接社区，获取资源**
 
-- 📦 **应用一键安装**：内置 Discord 等应用下载器，支持断点续传
+- 📦 **应用一键安装**：内置 Discord 应用下载器，下载后自动调用系统安装器（termux-open，兼容新版 Android）
 - 🎯 **社群直达**：五大 Discord 频道（酒馆官方、类脑、旅程、言庭、桃源）一键访问
 - 🧩 **插件市场**：集成热门社区插件（酒馆助手、记忆表格、自定模型等）
 - 📚 **完善帮助**：详细的局域网配置指南、常见问题解答
@@ -81,6 +94,7 @@
 - 💾 **多层级备份**：支持用户数据独立备份和完整本体备份
 - 📤 **便捷导出**：备份文件自动保存至手机"SillyTavern"专用文件夹
 - 📥 **智能恢复**：自动检测存储权限，从备份目录智能识别文件，一键恢复
+- 🧪 **完整性校验**：恢复前自动校验压缩包，先解压到临时目录、成功后才替换，损坏备份不会破坏现有数据
 - ⚠️ **安全提示**：恢复操作前强制确认，避免误操作导致数据丢失
 - 🔐 **权限管理**：导出/导入前自动检测并申请存储权限，确保操作顺利进行
 
@@ -169,6 +183,8 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 2. 其他设备连接本机开启的热点
 3. 本机连接其他设备开启的热点
 
+> 🔐 **安全提醒**：开启网络监听后，SillyTavern 默认用户没有密码，同一网络内的任何设备都可直接访问。请启动酒馆后在「用户设置 → 管理用户」中为账户设置密码。
+
 ### 🔗 关联启动配置详解
 
 通过 `3. 酒馆配置` → `3. 关联启动配置` 可以:
@@ -190,6 +206,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 反代服务将后台运行，日志保存在 `$HOME/setup.log`
 
 **注意事项:**
+- 退出酒馆（停止 SillyTavern）时会自动关闭反代服务，避免后台进程残留
 - 关闭 Termux 或杀死进程会同时停止两个服务
 - 可通过「查看反代日志」功能检查反代服务运行状态
 - 日志文件超过 5MB 时，下次启动会自动清理
@@ -211,9 +228,15 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 | 备份类型 | 包含内容 | 使用场景 |
 |:--------|:--------|:--------|
 | **用户数据备份** | 角色卡、聊天记录、配置文件（`data` 和 `public` 目录） | 日常备份、数据迁移、设备更换 |
-| **完整本体备份** | 整个 SillyTavern 目录（含插件和自定义修改） | 系统完整备份、环境迁移 |
+| **完整本体备份** | 整个 SillyTavern 目录（含插件与自定义修改，不含 node_modules 依赖） | 系统完整备份、环境迁移 |
 
 **备份文件存储位置**：`/storage/emulated/0/SillyTavern/`（手机"SillyTavern"文件夹）
+
+**安全恢复机制：**
+- 🧪 恢复前自动校验压缩包完整性，损坏备份直接中止
+- 📦 先解压到临时目录，全部成功后才替换现有数据，任何失败路径都不会改动现有数据
+- 💡 本体备份不含依赖，恢复后首次启动会自动安装（需联网）
+- 📌 恢复过程会临时占用与备份相当的额外存储空间
 
 **智能权限管理：**
 - 📂 导出前自动检测存储权限，未授权时自动申请
@@ -281,7 +304,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 📶 **网络环境**：建议在 WiFi 环境下进行首次安装和大版本更新
 - 🔄 **定期备份**：建议每周备份一次用户数据，避免意外丢失
 - 📱 **设备性能**：推荐使用内存 4GB 及以上的设备，以获得更流畅的体验
-- 🔋 **后台运行**：使用 SillyTavern 时，请保持 Termux 在前台或使用 `termux-wake-lock` 防止系统杀后台
+- 🔋 **后台运行**：启动酒馆时脚本会自动启用唤醒锁（termux-wake-lock）并在退出时解除；使用期间仍建议尽量保持 Termux 前台运行，防止系统杀后台
 
 ---
 
@@ -298,7 +321,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 **A：** 可尝试以下解决方案：
 1. 检查网络连接是否稳定，建议切换至 WiFi 环境
-2. 确认能否访问 GitHub（`ping github.com`）
+2. 确认能否访问 GitHub（可在浏览器中打开 github.com 测试；部分网络禁 ping，ping 不通不代表网络不可用）
 3. 如果多次失败，可尝试更换镜像源或使用代理
 4. 加入 QQ 群 **807134015** 寻求技术支持
 
@@ -315,7 +338,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 1. 进入主菜单，选择 `5. 系统维护`
 2. 选择 `3. 导出酒馆数据`
 3. 脚本会自动检测存储权限（如未授权会弹窗申请）
-4. 自动将 `data` 目录打包为 ZIP 文件
+4. 自动将 `data` 和 `public` 目录打包为 ZIP 文件
 5. 备份文件保存在手机的"SillyTavern"文件夹（`/storage/emulated/0/SillyTavern/`）
 6. 文件命名格式：`SillyTavern-Data_YYYYMMDD_HHMMSS.zip`
 
@@ -339,6 +362,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 ⚠️ **重要提示**：
 - 恢复操作会覆盖当前所有数据，请谨慎操作！
+- 恢复前会自动校验备份完整性并先解压到临时目录，损坏的备份会被拒绝且不影响现有数据
 - 如果看不到备份文件列表，请确认文件已放入正确的目录
 - 首次恢复时请在弹窗中点击"允许"授予存储权限
 </details>
@@ -354,6 +378,8 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 5. 在其他设备的浏览器中访问 `http://内网IP:8000/`
 
 **示例**：如果获取到的 IP 是 `192.168.1.100`，则访问 `http://192.168.1.100:8000/`
+
+> 🔐 **安全提醒**：开启监听后默认用户没有密码，请在酒馆「用户设置 → 管理用户」中设置密码，避免同网络内他人访问你的聊天记录与 API 密钥。
 </details>
 
 <details>
@@ -492,6 +518,16 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 修改 `$HOME/Menu.sh` 添加自定义菜单选项
 
 建议在修改前备份原始文件。
+</details>
+
+<details>
+<summary><b>Q16：更新脚本会影响我的本地配置吗？</b></summary>
+
+**A：** 不会（v2026.07.02 起）。脚本更新机制已重构：
+
+- 更新只替换 `Install.sh` 和 `Menu.sh` 脚本文件，**不再覆盖 `$HOME/.env`**，关联启动（START_MODE）等本地配置会完整保留
+- 版本号以脚本文件本体为准：某个脚本下载失败时不会误标记为已更新，下次检查会自动重试
+- 脚本采用「临时文件 + 原子替换」方式自更新，不会出现更新到一半损坏脚本的情况
 </details>
 
 ---
