@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2026.10.13-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2026.10.14-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ一群](https://img.shields.io/badge/QQ一群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 [![QQ二群](https://img.shields.io/badge/QQ二群-1039656113-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/jgakXZz3Xi)
@@ -36,7 +36,11 @@
 
 ## 🆕 最近更新
 
-> 当前版本 **v2026.10.13**，本次更新完善安装、恢复与维护流程，并更新插件、社群与字体资源说明。
+> 当前版本 **v2026.10.14**，本次更新 Discord 应用安装资源。
+
+- 📦 **Discord 更新**：[348.10 - Stable（348010）](https://github.com/print-yuhuan/SillyTavern-Termux/releases/tag/Discord_348.10-Stable)，安装包适用于 arm64-v8a 设备，最低要求 Android 7.0，脚本下载链接已同步更新
+
+**v2026.10.13 更新内容：**
 
 - 🛡️ **安装与恢复保护**：保留现有非 Git 安装，拒绝无效本体与符号链接备份，目录替换失败时整组回滚
 - 🧪 **产物校验**：下载与自更新校验成功后才替换，备份打包或校验失败不会提示成功
@@ -90,7 +94,7 @@
 
 **连接社区，获取资源**
 
-- 📦 **应用一键安装**：内置 Discord 应用下载器，下载后自动调用系统安装器（termux-open，兼容新版 Android）
+- 📦 **应用一键安装**：内置 [Discord 348.10 - Stable](https://github.com/print-yuhuan/SillyTavern-Termux/releases/tag/Discord_348.10-Stable) 下载器（arm64-v8a，Android 7.0+），下载后自动调用系统安装器（termux-open，兼容新版 Android）
 - 🎯 **社群直达**：7 个 Discord 社群（酒馆频道、类脑频道、旅程频道、棱镜频道、尾巴镇频道、喵喵电波频道、LOFI频道）一键访问
 - 🧩 **插件市场**：集成酒馆助手、记忆表格、自定义模型、小白X、柏宝书、提示词模板，支持安装与卸载
 - 📚 **完善帮助**：详细的局域网配置指南、常见问题解答
