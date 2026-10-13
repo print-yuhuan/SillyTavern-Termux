@@ -6,9 +6,10 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2026.07.02-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2026.10.13-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
-[![QQ Group](https://img.shields.io/badge/QQ交流群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
+[![QQ一群](https://img.shields.io/badge/QQ一群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
+[![QQ二群](https://img.shields.io/badge/QQ二群-1039656113-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/jgakXZz3Xi)
 
 [项目简介](#-项目简介) • [最近更新](#-最近更新) • [核心特性](#-核心特性) • [快速上手](#-快速上手) • [功能详解](#-功能详解) • [注意事项](#-注意事项) • [常见问题](#-常见问题) • [社区与支持](#-社区与支持)
 
@@ -35,14 +36,17 @@
 
 ## 🆕 最近更新
 
-> 当前版本 **v2026.07.02**，本次更新围绕数据安全与稳定性全面加固。
+> 当前版本 **v2026.10.13**，本次更新完善安装、恢复与维护流程，并更新插件、社群与字体资源说明。
 
-- 🛡️ **数据安全加固**：导入备份改为「先校验、后解压、成功才替换」，损坏的备份不再导致数据丢失
-- 🔄 **更新机制重构**：脚本更新不再覆盖本地配置（如关联启动设置），版本号以脚本文件本体为准，更新失败会自动重试
-- 📦 **导出瘦身**：导出酒馆本体不再打包 node_modules，速度更快、体积更小
-- 🤖 **兼容性修复**：Discord 安装改用 termux-open（兼容 Android 7+）；禁 ICMP 的网络下也能正常检查脚本更新
-- ⚡ **安装提速**：依赖安装不再强制清空 npm 缓存，仅在失败重试时清理
-- 🔐 **安全提醒**：开启局域网监听后新增「为默认用户设置密码」提示
+- 🛡️ **安装与恢复保护**：保留现有非 Git 安装，拒绝无效本体与符号链接备份，目录替换失败时整组回滚
+- 🧪 **产物校验**：下载与自更新校验成功后才替换，备份打包或校验失败不会提示成功
+- 🔧 **维护修复**：依赖修复接入酒馆模块安装，检查目标版本的 Node.js 要求，兼容带空格的备份文件名
+- 🔗 **进程与网络**：仅清理本次启动会话的服务，下载统一设置超时、低速检测和重试
+- 🧩 **插件与作者**：新增 [小白X](https://github.com/RT15548/LittleWhiteBox)、[柏宝书](https://github.com/baibai-git/ST-BaiBai-Book)、[提示词模板](https://github.com/zonde306/ST-Prompt-Template)，支持安装与卸载；[记忆表格](https://github.com/muyoou/st-memory-enhancement) 补齐木悠、LSR 两位开发作者，模型插件统一命名为“自定义模型”
+- ✍️ **署名格式**：开发作者优先使用中文名，无中文名时保留英文，多位作者用顿号分隔；版权署名使用英文，项目与插件说明的版权年份统一为 © 2026
+- 🎯 **酒馆社群**：[酒馆频道](https://discord.gg/sillytavern)、[类脑频道](https://discord.gg/odysseia)、[旅程频道](https://discord.gg/elysianhorizon)、[棱镜频道](https://discord.gg/prismairp)、[尾巴镇频道](https://discord.gg/puppyboo)、[喵喵电波频道](https://discord.gg/TvenmeVWKd)、[LOFI频道](https://discord.gg/kRxYXRcnJE)，共 7 项，输入频道编号后回车即可选择
+- 💬 **加群交流**：现有群统一命名为 [QQ一群（807134015）](https://qm.qq.com/q/Z1kk7tCrcG)，新增 [QQ二群（1039656113）](https://qm.qq.com/q/jgakXZz3Xi)；作者信息展示两个群号，加群交流支持选择一群或二群，文档中的加群入口同步更新
+- 🖌️ **字体致谢与许可**：感谢 [subframe7536](https://github.com/subframe7536) 提供 [Maple Mono](https://github.com/subframe7536/maple-font) 字体，作者信息中同步展示字体来源与许可；仓库附带上游原始许可证 [MapleMono-OFL.txt](./MapleMono-OFL.txt)，字体按 SIL Open Font License 1.1 分发
 
 > 完整更新内容可在菜单 `6. 脚本管理` → `2. 查看更新日志` 查看。
 
@@ -78,17 +82,17 @@
 **专为中文用户打造的友好界面**
 
 - 🎨 **全中文界面**：菜单、提示、帮助文档全面中文化，无语言障碍
-- 🖌️ **终端美化**：自动配置 MapleMono 等宽字体，提升终端可读性
+- 🖌️ **终端美化**：自动配置 [Maple Mono](https://github.com/subframe7536/maple-font) 等宽字体（subframe7536 开发，SIL Open Font License 1.1），提升终端可读性
 - 📱 **移动优化**：界面布局针对手机屏幕优化，操作流畅便捷
-- 🔗 **智能跳转**：支持一键跳转 QQ 群、邮件客户端、Discord 频道
+- 🔗 **智能跳转**：支持一键跳转 QQ一群、QQ二群、邮件客户端、Discord 频道
 
 ### 🌐 丰富资源生态
 
 **连接社区，获取资源**
 
 - 📦 **应用一键安装**：内置 Discord 应用下载器，下载后自动调用系统安装器（termux-open，兼容新版 Android）
-- 🎯 **社群直达**：五大 Discord 频道（酒馆官方、类脑、旅程、言庭、桃源）一键访问
-- 🧩 **插件市场**：集成热门社区插件（酒馆助手、记忆表格、自定模型等）
+- 🎯 **社群直达**：7 个 Discord 社群（酒馆频道、类脑频道、旅程频道、棱镜频道、尾巴镇频道、喵喵电波频道、LOFI频道）一键访问
+- 🧩 **插件市场**：集成酒馆助手、记忆表格、自定义模型、小白X、柏宝书、提示词模板，支持安装与卸载
 - 📚 **完善帮助**：详细的局域网配置指南、常见问题解答
 
 ### 🔒 数据安全保障
@@ -110,7 +114,7 @@
 
 ### 步骤 1：安装 Termux
 
-> ⚠️ **重要提示**：请务必使用官方渠道下载的 Termux，**切勿使用 Google Play 商店版本**（已停止维护，缺失核心组件）！
+> ⚠️ **重要提示**：推荐使用官方 GitHub 或 F-Droid 发行版。Google Play 目前有面向 Android 11+ 的实验分支，与常用发行版存在功能差异，完整兼容性需要单独验证。
 
 #### 📥 官方下载渠道
 
@@ -121,7 +125,7 @@
 | **F-Droid** | v0.118.3（稳定版） | ⭐⭐⭐⭐⭐ | [下载 APK](https://f-droid.org/repo/com.termux_1002.apk) |
 | **F-Droid** | v0.119.0-beta.3 | ⭐⭐⭐⭐ | [下载 APK](https://f-droid.org/repo/com.termux_1022.apk) |
 
-> 💡 **下载遇到问题？** 加入 QQ 交流群 **807134015**，群文件中提供 Termux 安装包备用下载。
+> 💡 **下载遇到问题？** 加入 [QQ一群（807134015）](https://qm.qq.com/q/Z1kk7tCrcG) 或 [QQ二群（1039656113）](https://qm.qq.com/q/jgakXZz3Xi)，群文件中提供 Termux 安装包备用下载。
 
 ---
 
@@ -172,7 +176,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 | **4** | **🧩 酒馆插件** | 社区插件一键安装/卸载，含详细功能介绍和安全提示 |
 | **5** | **💾 系统维护** | 查看依赖版本、修复环境、备份/恢复用户数据和完整本体、**版本切换** |
 | **6** | **📦 脚本管理** | 检测脚本更新、在线升级、查看更新日志、一键彻底卸载 |
-| **7** | **ℹ️ 关于脚本** | 作者信息、QQ 群、邮件反馈、资源下载、社群链接 |
+| **7** | **ℹ️ 关于脚本** | 作者信息、QQ一群、QQ二群、邮件反馈、资源下载、社群链接 |
 
 ### 🔧 局域网配置详解
 
@@ -210,20 +214,24 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 反代服务将后台运行，日志保存在 `$HOME/setup.log`
 
 **注意事项：**
-- 退出酒馆（停止 SillyTavern）时会自动关闭反代服务，避免后台进程残留
+- 退出酒馆（停止 SillyTavern）时会自动关闭本次会话的反代服务，避免后台进程残留
+- 同一时间只允许一个脚本启动会话；异常终止后如提示已有启动锁，请先确认服务已停止，再清理 `$HOME/.st_run.lock` 目录
 - 关闭 Termux 或杀死进程会同时停止两个服务
 - 可通过「查看反代日志」功能检查反代服务运行状态
 - 日志文件超过 5MB 时，下次启动会自动清理
 
 ### 🧩 可用插件列表
 
-| 插件名称 | 开发者 | 功能简介 | 安全等级 |
+| 插件名称 | 开发者 | 功能简介 | 使用须知 |
 |:--------|:------|:--------|:-------:|
-| **酒馆助手** | KAKAA、青空莉想做舞台少女的狗 | 多功能扩展，支持渲染交互元素、jQuery DOM 操作、联动外部应用 | ⚠️ 中风险 |
-| **记忆表格** | 木悠 | 结构化长期记忆管理，支持角色设定、事件、物品等自定义表格 | ✅ 低风险 |
-| **自定模型** | LenAnderson | 为 OpenAI、Claude、Gemini 连接添加自定义模型名称 | ✅ 低风险 |
+| [**酒馆助手**](https://github.com/N0VI028/JS-Slash-Runner) | KAKAA、青空莉想做舞台少女的狗 | 多功能扩展，支持渲染交互元素、jQuery DOM 操作、联动外部应用 | 仅运行来源可信的脚本 |
+| [**记忆表格**](https://github.com/muyoou/st-memory-enhancement) | 木悠、LSR | 结构化长期记忆管理，支持角色设定、事件、物品等自定义表格 | 适用于聊天补全模式 |
+| [**自定义模型**](https://github.com/LenAnderson/SillyTavern-CustomModels) | LenAnderson | 为 OpenAI、Claude、Gemini 连接添加自定义模型名称 | 按需添加模型名称 |
+| [**小白X**](https://github.com/RT15548/LittleWhiteBox) | biex | 剧情记忆、状态管理、绘图、语音与应用面板 | 安装后按需配置各项功能 |
+| [**柏宝书**](https://github.com/baibai-git/ST-BaiBai-Book) | 柏柏 | 剧情摘要、人物与物品记录、时间线管理、向量记忆召回 | SillyTavern 1.12.13+，安装后启用记忆引擎 |
+| [**提示词模板**](https://github.com/zonde306/ST-Prompt-Template) | zonde306 | 为提示词、角色卡与世界书提供 EJS 模板、变量、条件和循环 | 仅使用来源可信的模板 |
 
-> ⚠️ **安全提示**：酒馆助手插件支持执行自定义 JavaScript 脚本，请仅运行来源可信的代码。
+> ⚠️ **安全提示**：酒馆助手与提示词模板支持执行 JavaScript，请仅运行来源可信、内容可控的脚本或模板。
 
 ### 💾 备份与恢复
 
@@ -238,7 +246,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 **安全恢复机制：**
 - 🧪 恢复前自动校验压缩包完整性，损坏备份直接中止
-- 📦 先解压到临时目录，全部成功后才替换现有数据，任何失败路径都不会改动现有数据
+- 📦 先解压到临时目录并验证目录结构；替换失败时整组回滚，回滚失败会保留副本并显示位置
 - 💡 本体备份不含依赖，恢复后首次启动会自动安装（需联网）
 - 📌 恢复过程会临时占用与备份相当的额外存储空间
 
@@ -285,7 +293,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - ✅ **Termux 版本**：v0.118.3 或更高（请使用官方渠道下载）
 - ✅ **存储空间**：至少 500MB 可用空间（推荐 1GB 以上）
 - ✅ **网络连接**：稳定的网络环境（首次安装需下载约 200MB 数据）
-- ✅ **Node.js 版本**：18.x 或更高（脚本自动安装）
+- ✅ **Node.js 版本**：当前 SillyTavern release 要求 20.x 或更高，具体以目标版本 `package.json` 中的 `engines.node` 为准（脚本安装依赖时会检查兼容性）
 
 ### 权限要求
 
@@ -315,9 +323,9 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 ### 🧰 安装与环境
 
 <details>
-<summary><b>Q1：为什么不能使用 Google Play 商店的 Termux？</b></summary>
+<summary><b>Q1：应该选择哪个 Termux 下载渠道？</b></summary>
 
-**A：** Google Play 版本的 Termux 已于 2020 年停止维护，缺失许多核心组件和功能更新，无法正常运行本项目所需的环境。请务必从 [GitHub Releases](https://github.com/termux/termux-app/releases) 或 [F-Droid](https://f-droid.org/packages/com.termux/) 下载官方维护的版本。
+**A：** Google Play 目前提供面向 Android 11+ 的实验分支，与 GitHub/F-Droid 发行版存在功能和兼容性差异。为了获得本项目推荐的运行环境，建议从 [GitHub Releases](https://github.com/termux/termux-app/releases) 或 [F-Droid](https://f-droid.org/packages/com.termux/) 下载；实验分支的完整兼容性需要单独验证。详情请参阅 [Termux 官方安装说明](https://github.com/termux/termux-app#google-play-store-experimental-branch)。
 </details>
 
 <details>
@@ -327,7 +335,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 1. 检查网络连接是否稳定，建议切换至 WiFi 环境
 2. 确认能否访问 GitHub（可在浏览器中打开 github.com 测试；部分网络禁 ping，ping 不通不代表网络不可用）
 3. 如果多次失败，可尝试更换镜像源或使用代理
-4. 加入 QQ 群 **807134015** 寻求技术支持
+4. 加入 [QQ一群（807134015）](https://qm.qq.com/q/Z1kk7tCrcG) 或 [QQ二群（1039656113）](https://qm.qq.com/q/jgakXZz3Xi) 寻求技术支持
 
 **常见错误代码：**
 - `curl: (6)` - DNS 解析失败，检查网络连接
@@ -399,7 +407,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 3. 脚本会自动重新安装所有必要的依赖包
 4. 修复完成后，重新尝试启动 SillyTavern
 
-如果问题仍未解决，请加入 QQ 群并提供详细的错误信息。
+如果问题仍未解决，请加入 [QQ一群（807134015）](https://qm.qq.com/q/Z1kk7tCrcG) 或 [QQ二群（1039656113）](https://qm.qq.com/q/jgakXZz3Xi)，并提供详细的错误信息。
 </details>
 
 <details>
@@ -537,7 +545,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 <details>
 <summary><b>Q16：更新脚本会影响我的本地配置吗？</b></summary>
 
-**A：** 不会（v2026.07.02 起）。脚本更新机制已重构：
+**A：** 不会。脚本更新机制已重构：
 
 - 更新只替换 `Install.sh` 和 `Menu.sh` 脚本文件，**不再覆盖 `$HOME/.env`**，关联启动（START_MODE）等本地配置会完整保留
 - 版本号以脚本文件本体为准：某个脚本下载失败时不会误标记为已更新，下次检查会自动重试
@@ -570,11 +578,17 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 <table>
 <tr>
 <td align="center" width="33%">
-<img src="https://img.shields.io/badge/QQ群-807134015-blue?style=for-the-badge&logo=tencentqq" alt="QQ Group"/>
+<img src="https://img.shields.io/badge/QQ一群-807134015-blue?style=for-the-badge&logo=tencentqq" alt="QQ一群"/>
 <br><br>
-<b>QQ 交流群</b>
+<b>QQ一群</b>
 <br>
-<a href="https://qm.qq.com/q/Z1kk7tCrcG">点击加入</a>
+<a href="https://qm.qq.com/q/Z1kk7tCrcG">点击加入 QQ一群</a>
+<br><br>
+<img src="https://img.shields.io/badge/QQ二群-1039656113-blue?style=for-the-badge&logo=tencentqq" alt="QQ二群"/>
+<br><br>
+<b>QQ二群</b>
+<br>
+<a href="https://qm.qq.com/q/jgakXZz3Xi">点击加入 QQ二群</a>
 <br><br>
 实时在线交流<br>快速获取帮助<br>分享使用经验
 </td>
@@ -654,12 +668,19 @@ Bug 报告<br>功能请求<br>公开讨论
 
 本项目部署的 [SillyTavern](https://github.com/SillyTavern/SillyTavern) 采用 **AGPL-3.0** 许可协议。
 
+### Maple Mono 字体许可
+
+仓库内的 `MapleMono.ttf` 为 **Maple Mono NF CN** 字体，来源于 [subframe7536/maple-font](https://github.com/subframe7536/maple-font)，由 **subframe7536** 开发。
+
+该字体采用 **SIL Open Font License 1.1**，字体的原始版权与许可声明完整保存在 [MapleMono-OFL.txt](./MapleMono-OFL.txt)，字体资源按该许可证分发。
+
 ### 商业授权
 
 本项目禁止用于商业用途，请通过以下方式联系作者：
 
 - 📧 邮件：print.yuhuan@gmail.com
-- 💬 QQ 群：807134015
+- 💬 [QQ一群：807134015](https://qm.qq.com/q/Z1kk7tCrcG)
+- 💬 [QQ二群：1039656113](https://qm.qq.com/q/jgakXZz3Xi)
 
 详细许可条款请查看 [LICENSE](./LICENSE) 文件。
 
@@ -671,7 +692,8 @@ Bug 报告<br>功能请求<br>公开讨论
 
 - 💖 **[SillyTavern](https://github.com/SillyTavern/SillyTavern)** 项目及其开发团队
 - 💖 **[Termux](https://termux.dev/)** 项目，为安卓提供了强大的 Linux 环境
-- 💖 所有社区插件开发者（KAKAA、青空莉想做舞台少女的狗、木悠、LenAnderson 等）
+- 💖 **[Maple Mono](https://github.com/subframe7536/maple-font)** 项目及开发者 **subframe7536**，为本项目提供终端等宽字体资源
+- 💖 所有社区插件开发者（KAKAA、青空莉想做舞台少女的狗、木悠、LSR、LenAnderson、biex、柏柏、zonde306 等）
 - 💖 为本项目提供反馈和建议的所有用户
 
 ### 支持本项目
@@ -681,7 +703,7 @@ Bug 报告<br>功能请求<br>公开讨论
 - ⭐ 在 [GitHub](https://github.com/print-yuhuan/SillyTavern-Termux) 点亮 Star
 - 🔀 Fork 本项目并提交改进
 - 📢 分享给更多需要的朋友
-- 💬 加入 QQ 群参与社区建设
+- 💬 加入 [QQ一群（807134015）](https://qm.qq.com/q/Z1kk7tCrcG) 或 [QQ二群（1039656113）](https://qm.qq.com/q/jgakXZz3Xi) 参与社区建设
 
 **您的支持是项目持续维护的最大动力！**
 

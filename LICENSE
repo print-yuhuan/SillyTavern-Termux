@@ -1,6 +1,6 @@
 Custom Non-Commercial License (Inspired by CC BY-NC 4.0)
 
-Copyright (c) 2025 欤歡
+Copyright © 2026 print-yuhuan
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this script and associated documentation files (the "Script"), to deal
@@ -24,3 +24,12 @@ and distribute copies of the Script, subject to the following conditions:
 
 6.  **No Commercial Use Under Any Circumstances**
     Commercial use of this Script is strictly prohibited under any circumstances. The author does not offer commercial licensing options. Any commercial use, including but not limited to selling, licensing, or integrating into commercial products, is expressly forbidden and constitutes a violation of this license.
+
+Third-party font resource
+
+The bundled MapleMono.ttf (Maple Mono NF CN) is from the Maple Mono project:
+https://github.com/subframe7536/maple-font
+
+This font is distributed under the SIL Open Font License, Version 1.1,
+instead of the custom non-commercial license above. Its original copyright
+notice and license text are included in MapleMono-OFL.txt.

@@ -12,7 +12,81 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20260702
+INSTALL_VERSION=20261013
+
+# ==== 下载与文件校验（与菜单脚本保持一致）====
+download_resource() {
+    local url="$1" output="$2" max_seconds="${3:-120}" progress="${4:-silent}"
+    local -a display_args=(--silent --show-error)
+    [ "$progress" = "progress" ] && display_args=(--progress-bar)
+    curl -fL "${display_args[@]}" --connect-timeout 10 --max-time "$max_seconds" \
+        --speed-limit 1024 --speed-time 30 --retry 2 --retry-delay 2 \
+        -o "$output" "$url"
+}
+
+validate_resource() {
+    local file="$1" kind="$2" expected="${3:-}" version
+    [ -s "$file" ] || return 1
+    case "$kind" in
+        menu|install)
+            bash -n "$file" || return 1
+            if [ "$kind" = "menu" ]; then
+                version=$(sed -n 's/^MENU_VERSION=\([0-9][0-9]*\)$/\1/p' "$file" | head -n1)
+            else
+                version=$(sed -n 's/^INSTALL_VERSION=\([0-9][0-9]*\)$/\1/p' "$file" | head -n1)
+            fi
+            [ -n "$version" ] && { [ -z "$expected" ] || [ "$version" = "$expected" ]; }
+            ;;
+        env)
+            bash -n "$file" && grep -qE "^START_MODE=[\"']?[12][\"']?[[:space:]]*(#.*)?$" "$file"
+            ;;
+        font)
+            node - "$file" <<'JS'
+const fs = require('fs');
+try {
+    const b = fs.readFileSync(process.argv[2]);
+    if (b.length < 12) process.exit(1);
+    let faces = [0];
+    if (b.subarray(0, 4).toString('ascii') === 'ttcf') {
+        const count = b.readUInt32BE(8);
+        if (!count || 12 + count * 4 > b.length) process.exit(1);
+        faces = Array.from({ length: count }, (_, i) => b.readUInt32BE(12 + i * 4));
+    }
+    for (const face of faces) {
+        const signature = b.subarray(face, face + 4).toString('hex');
+        if (face + 12 > b.length || !['00010000', '4f54544f', '74727565'].includes(signature)) process.exit(1);
+        const count = b.readUInt16BE(face + 4);
+        if (!count || face + 12 + count * 16 > b.length) process.exit(1);
+        for (let i = 0; i < count; i++) {
+            const offset = b.readUInt32BE(face + 12 + i * 16 + 8);
+            const length = b.readUInt32BE(face + 12 + i * 16 + 12);
+            if (offset + length > b.length) process.exit(1);
+        }
+    }
+} catch { process.exit(1); }
+JS
+            ;;
+        apk)
+            unzip -t "$file" >/dev/null 2>&1 \
+                && unzip -Z1 "$file" | grep -qx 'AndroidManifest.xml'
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+download_validated() {
+    local url="$1" target="$2" kind="$3" expected="${4:-}"
+    local max_seconds="${5:-120}" progress="${6:-silent}" tmp
+    tmp=$(mktemp "${target}.download.XXXXXX") || return 1
+    if download_resource "$url" "$tmp" "$max_seconds" "$progress" \
+       && validate_resource "$tmp" "$kind" "$expected" \
+       && { [[ "$kind" != "menu" && "$kind" != "install" ]] || chmod +x "$tmp"; } \
+       && mv -fT -- "$tmp" "$target"; then
+        return 0
+    fi
+    rm -f -- "$tmp"
+    return 1
+}
 
 # =========================================================================
 # 步骤 1/8：环境检测
@@ -77,7 +151,10 @@ echo -e "\n${CYAN}${BOLD}==== 步骤 3/8：安装依赖 ====${NC}"
 for dep in git curl zip unzip; do
     if ! command -v $dep >/dev/null 2>&1; then
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
-        pkg install -y $dep
+        if ! pkg install -y "$dep"; then
+            echo -e "${RED}${BOLD}>> $dep 安装失败，已中止安装，请检查网络或存储空间。${NC}"
+            exit 1
+        fi
     else
         echo -e "${CYAN}${BOLD}>> $dep 已安装，跳过。${NC}"
     fi
@@ -86,29 +163,50 @@ done
 if ! command -v node >/dev/null 2>&1; then
     if pkg list-all | grep -q '^nodejs-lts/'; then
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：node，正在安装 nodejs-lts...${NC}"
-        pkg install -y nodejs-lts || pkg install -y nodejs
+        if ! { pkg install -y nodejs-lts || pkg install -y nodejs; }; then
+            echo -e "${RED}${BOLD}>> Node.js 安装失败，已中止安装。${NC}"
+            exit 1
+        fi
     else
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：node，正在安装 nodejs...${NC}"
-        pkg install -y nodejs
+        if ! pkg install -y nodejs; then
+            echo -e "${RED}${BOLD}>> Node.js 安装失败，已中止安装。${NC}"
+            exit 1
+        fi
     fi
 else
     echo -e "${CYAN}${BOLD}>> node 已安装，跳过。${NC}"
 fi
 
-npm config set prefix "$PREFIX"
+for dep in git curl zip unzip node npm; do
+    if ! command -v "$dep" >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，已中止安装。${NC}"
+        exit 1
+    fi
+done
+if ! npm config set prefix "$PREFIX"; then
+    echo -e "${RED}${BOLD}>> npm 配置失败，已中止安装，请检查配置文件权限。${NC}"
+    exit 1
+fi
 echo -e "${GREEN}${BOLD}>> 步骤 3/8 完成：依赖已安装。${NC}"
 
 # =========================================================================
 # 步骤 4/8：下载并配置终端字体
+# 字体：Maple Mono NF CN，作者：subframe7536
+# 来源：https://github.com/subframe7536/maple-font
+# 许可证：SIL Open Font License 1.1，原文见仓库 MapleMono-OFL.txt
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 4/8：下载并配置终端字体 ====${NC}"
 FONT_DIR="$HOME/.termux"
 FONT_PATH="$FONT_DIR/font.ttf"
-mkdir -p "$FONT_DIR"
-if [ -f "$FONT_PATH" ]; then
+mkdir -p "$FONT_DIR" || { echo -e "${RED}${BOLD}>> 字体目录创建失败。${NC}"; exit 1; }
+font_ready=0
+if validate_resource "$FONT_PATH" font; then
+    font_ready=1
     echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
 else
-    if curl -fL --progress-bar -o "$FONT_PATH" "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf"; then
+    if download_validated "https://github.com/print-yuhuan/SillyTavern-Termux/raw/refs/heads/main/MapleMono.ttf" "$FONT_PATH" font "" 300 progress; then
+        font_ready=1
         echo -e "${GREEN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
     else
         echo -e "${RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
@@ -116,7 +214,7 @@ else
     fi
 fi
 
-if [ -f "$FONT_PATH" ]; then
+if [ "$font_ready" -eq 1 ]; then
     if command -v termux-reload-settings >/dev/null 2>&1; then
         termux-reload-settings \
         && echo -e "${GREEN}${BOLD}>> 配置已自动刷新，字体已生效。${NC}" \
@@ -131,11 +229,16 @@ fi
 # 步骤 5/8：克隆 SillyTavern 主仓库
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 5/8：克隆 SillyTavern 仓库 ====${NC}"
-if [ -d "$HOME/SillyTavern/.git" ]; then
+if [ -e "$HOME/SillyTavern/.git" ] \
+   && git -C "$HOME/SillyTavern" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo -e "${YELLOW}${BOLD}>> SillyTavern 仓库已存在，跳过克隆。${NC}"
     echo -e "${YELLOW}${BOLD}>> 步骤 5/8 跳过：仓库已存在。${NC}"
 else
-    rm -rf "$HOME/SillyTavern"
+    if [ -e "$HOME/SillyTavern" ] || [ -L "$HOME/SillyTavern" ]; then
+        echo -e "${RED}${BOLD}>> 检测到现有 SillyTavern 目录，但未找到有效的 Git 仓库，已中止克隆。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 现有文件与数据已保留，请先备份并确认安装来源后再继续。${NC}"
+        exit 1
+    fi
     if git clone https://github.com/SillyTavern/SillyTavern "$HOME/SillyTavern"; then
         echo -e "${GREEN}${BOLD}>> 步骤 5/8 完成：SillyTavern 仓库已克隆。${NC}"
     else
@@ -153,21 +256,29 @@ ENV_PATH="$HOME/.env"
 MENU_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/Menu.sh"
 ENV_URL="https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/heads/main/.env"
 
-if [ -f "$MENU_PATH" ]; then
+if validate_resource "$MENU_PATH" menu; then
     echo -e "${YELLOW}${BOLD}>> Menu.sh 已存在，跳过下载。${NC}"
 else
-    curl -fsSL -o "$MENU_PATH" "$MENU_URL" && chmod +x "$MENU_PATH" \
-    || { echo -e "${RED}${BOLD}>> Menu.sh 下载失败！${NC}"; exit 1; }
+    download_validated "$MENU_URL" "$MENU_PATH" menu \
+    || { echo -e "${RED}${BOLD}>> Menu.sh 下载或校验失败，已中止安装！${NC}"; exit 1; }
 fi
 
-if [ -f "$ENV_PATH" ]; then
+if validate_resource "$ENV_PATH" env; then
     echo -e "${YELLOW}${BOLD}>> .env 已存在，跳过下载。${NC}"
 else
-    curl -fsSL -o "$ENV_PATH" "$ENV_URL" \
-    || { echo -e "${RED}${BOLD}>> .env 下载失败！${NC}"; exit 1; }
+    if [ -e "$ENV_PATH" ] || [ -L "$ENV_PATH" ]; then
+        echo -e "${RED}${BOLD}>> .env 配置校验失败，已中止安装。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 原配置已保留，请检查 START_MODE 与文件语法后重试。${NC}"
+        exit 1
+    fi
+    download_validated "$ENV_URL" "$ENV_PATH" env "" 30 \
+    || { echo -e "${RED}${BOLD}>> .env 下载或校验失败，已中止安装！${NC}"; exit 1; }
 fi
 
-source "$ENV_PATH"
+if ! source "$ENV_PATH"; then
+    echo -e "${RED}${BOLD}>> .env 配置加载失败，已中止安装。${NC}"
+    exit 1
+fi
 echo -e "${GREEN}${BOLD}>> 步骤 6/8 完成：菜单脚本与配置文件已就绪。${NC}"
 
 # =========================================================================
@@ -203,6 +314,10 @@ fi
 echo -e "\n${CYAN}${BOLD}==== 步骤 8/8：安装 SillyTavern 依赖 ====${NC}"
 cd "$HOME/SillyTavern" || { echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败！${NC}"; exit 1; }
 export NODE_ENV=production
+required_node=$(node -p 'const p=JSON.parse(require("fs").readFileSync("package.json", "utf8")); (p.engines && p.engines.node) || "未指定"') || {
+    echo -e "${RED}${BOLD}>> 无法读取酒馆运行环境要求，已中止依赖安装。${NC}"; exit 1;
+}
+echo -e "${CYAN}${BOLD}>> 当前 Node.js：$(node -v)，酒馆版本要求：${required_node}${NC}"
 
 retry_count=0
 max_retries=3
@@ -215,7 +330,7 @@ while [ $retry_count -lt $max_retries ]; do
         echo -e "${YELLOW}${BOLD}>> 重试安装依赖（第 $retry_count 次）…${NC}"
     fi
 
-    if npm install --no-audit --no-fund --loglevel=error --omit=dev --prefer-offline; then
+    if npm install --engine-strict --no-audit --no-fund --loglevel=error --omit=dev --prefer-offline; then
         install_success=1
         break
     else
@@ -233,6 +348,7 @@ if [ $install_success -eq 1 ]; then
     echo -e "${GREEN}${BOLD}>> 步骤 8/8 完成：SillyTavern 依赖已安装。${NC}"
 else
     echo -e "${RED}${BOLD}>> 依赖安装失败，已重试 $max_retries 次，请检查网络连接或日志信息。${NC}"
+    echo -e "${YELLOW}${BOLD}>> 若日志提示 EBADENGINE，请升级 Node.js 至 ${required_node} 后重试。${NC}"
     exit 1
 fi
 
