@@ -18,9 +18,20 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101402
-UPDATE_DATE="2026-10-14"
+MENU_VERSION=2026101501
+UPDATE_DATE="2026-10-15"
 UPDATE_CONTENT="
+===============================================
+SillyTavern-Termux 更新日志 2026-10-15
+===============================================
+
+  ● 监听配置使用 YAML 校验和原子替换，关闭监听保留账户认证
+  ● 恢复、更新、依赖修复、版本切换和卸载与运行会话共享锁
+  ● 切换版本前检查目标 Node.js 要求，失败返回明确状态
+  ● 内存限制独立保存并迁移旧设置，更新后继续生效
+  ● 修复超长数字校验、输入结束循环和 Android 内网地址前缀
+  ● 安装增加本体校验，自启动检测排除注释并检查写入结果
+
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-14
 ===============================================
@@ -95,7 +106,139 @@ QQ_GROUP_2_LINK="https://qm.qq.com/q/jgakXZz3Xi"
 # ==== 通用函数 ====
 get_version() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2 | tr -d '\r'; }
 get_env_value() { [ -f "$1" ] && grep -E "^$2=" "$1" | head -n1 | cut -d'=' -f2- | tr -d '\r' | xargs; }
-press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
+press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; IFS= read -r -n1 -s || true; }
+
+# 调用者必须是子 Shell；描述符随退出关闭，维护期间阻止启动与其他维护。
+acquire_maintenance_lock() {
+    local run_lock="$HOME/.st_run.flock" lock_status running_pid
+    command -v flock >/dev/null 2>&1 || {
+        echo -e "${RED}${BOLD}>> 缺少 flock，请先安装 util-linux。${NC}"; return 1;
+    }
+    if [ -L "$run_lock" ] || { [ -e "$run_lock" ] && [ ! -f "$run_lock" ]; }; then
+        echo -e "${RED}${BOLD}>> 运行锁路径异常，已中止维护。${NC}"
+        return 1
+    fi
+    if ! { exec {maintenance_fd}>>"$run_lock"; } 2>/dev/null; then
+        echo -e "${RED}${BOLD}>> 无法打开运行锁，请检查主目录权限。${NC}"
+        return 1
+    fi
+    if flock -n -E 75 "$maintenance_fd"; then
+        :
+    else
+        lock_status=$?
+        if [ "$lock_status" -eq 75 ]; then
+            echo -e "${YELLOW}${BOLD}>> 酒馆或其他维护仍在运行，请先停止后重试。${NC}"
+        else
+            echo -e "${RED}${BOLD}>> 无法获取系统运行锁，已中止维护。${NC}"
+        fi
+        exec {maintenance_fd}>&-
+        return 1
+    fi
+    if [ -d "$HOME/SillyTavern" ] && running_pid=$(find_running_st_service 2 "$BASHPID"); then
+        echo -e "${YELLOW}${BOLD}>> 检测到运行服务 PID=${running_pid}，请先停止后维护。${NC}"
+        exec {maintenance_fd}>&-
+        return 1
+    fi
+}
+
+memory_limit_is_valid() {
+    [[ "$1" =~ ^[0-9]{1,4}$ ]] && (( 10#$1 >= 1024 && 10#$1 <= 8192 ))
+}
+
+set_memory_limit() (
+    local limit="$1" tmp
+    memory_limit_is_valid "$limit" || return 1
+    tmp=$(mktemp "$HOME/.st-memory.XXXXXX") || return 1
+    trap 'rm -f -- "$tmp"' EXIT
+    printf '%s\n' "$((10#$limit))" > "$tmp" && mv -fT -- "$tmp" "$HOME/.st-memory-limit"
+)
+
+# 将旧菜单写入 start.sh 的限制迁入独立配置，再去除命令行覆盖参数。
+migrate_memory_limit() {
+    local start="$HOME/SillyTavern/start.sh" legacy
+    [ -f "$start" ] || return 0
+    legacy=$(sed -n 's/^[[:space:]]*node --max-old-space-size=\([0-9][0-9]*\) "server.js" "\$@"[[:space:]]*$/\1/p' "$start" | head -n1)
+    [ -n "$legacy" ] || return 0
+    if [ ! -f "$HOME/.st-memory-limit" ]; then
+        set_memory_limit "$legacy" || {
+            echo -e "${RED}${BOLD}>> 旧内存设置无效或无法迁移，请重新设置内存限制。${NC}"
+            return 1
+        }
+    fi
+    sed -i 's/node --max-old-space-size=[0-9][0-9]* "server.js" "\$@"/node "server.js" "\$@"/' "$start"
+}
+
+apply_memory_limit() {
+    local limit
+    [ -f "$HOME/.st-memory-limit" ] || return 0
+    IFS= read -r limit < "$HOME/.st-memory-limit" || return 1
+    memory_limit_is_valid "$limit" || {
+        echo -e "${RED}${BOLD}>> 内存设置无效，请重新设置内存限制。${NC}"; return 1;
+    }
+    export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=$((10#$limit))"
+}
+
+set_lan_listen() (
+    local mode="$1" config="$HOME/SillyTavern/config.yaml" tmp
+    [[ "$mode" = true || "$mode" = false ]] || return 1
+    [ -f "$config" ] && [ ! -L "$config" ] || return 1
+    tmp=$(mktemp "${config}.lan.XXXXXX") || return 1
+    trap 'rm -f -- "$tmp"' EXIT
+    node --input-type=commonjs - "$config" "$tmp" "$mode" <<'JS'
+const fs = require('fs');
+const path = require('path');
+try {
+    const [file, temporary, mode] = process.argv.slice(2);
+    const YAML = require(require.resolve('yaml', { paths: [path.dirname(file)] }));
+    const doc = YAML.parseDocument(fs.readFileSync(file, 'utf8'));
+    if (doc.errors.length) throw doc.errors[0];
+    if (!YAML.isMap(doc.contents)) throw new Error('配置顶层必须是映射');
+    doc.set('listen', mode === 'true');
+    if (mode === 'true') {
+        for (const key of ['enableUserAccounts', 'enableDiscreetLogin']) {
+            if (doc.get(key) === false) doc.set(key, true);
+        }
+        const whitelist = doc.get('whitelist', true);
+        if (YAML.isSeq(whitelist)) {
+            for (const entry of whitelist.items) {
+                if (YAML.isScalar(entry) && entry.value === '127.0.0.1') entry.value = '0.0.0.0/0';
+            }
+        }
+    }
+    const output = String(doc);
+    if (YAML.parse(output).listen !== (mode === 'true')) throw new Error('监听配置验证失败');
+    fs.writeFileSync(temporary, output);
+    fs.chmodSync(temporary, fs.statSync(file).mode & 0o777);
+} catch (error) {
+    console.error(`监听配置修改失败：${error.message}`);
+    process.exit(1);
+}
+JS
+    [ "$?" -eq 0 ] && mv -fT -- "$tmp" "$config"
+)
+
+check_tag_node_compatibility() (
+    local target_package npm_root
+    target_package=$(mktemp "$HOME/.st_version_package.XXXXXX") || return 1
+    trap 'rm -f -- "$target_package"' EXIT
+    git show "refs/tags/$1:package.json" > "$target_package" || return 1
+    npm_root=$(npm root -g) || return 1
+    node --input-type=commonjs - "$target_package" "$npm_root/npm/package.json" <<'JS'
+const fs = require('fs');
+const { createRequire } = require('module');
+try {
+    const semver = createRequire(process.argv[3])('semver');
+    const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+    const required = pkg.engines && pkg.engines.node;
+    if (required && !semver.satisfies(process.versions.node, required)) {
+        throw new Error(`当前 Node.js ${process.versions.node} 不满足目标版本要求 ${required}`);
+    }
+} catch (error) {
+    console.error(`目标版本预检失败：${error.message}`);
+    process.exit(1);
+}
+JS
+)
 
 # ==== 下载与文件校验（与安装脚本保持一致）====
 download_resource() {
@@ -221,6 +364,8 @@ commit_restore() (
     local restore_lock="$HOME/.st_restore.lock"
     shift 2
     local -a names=("$@") saved=() installed=()
+    local maintenance_fd
+    acquire_maintenance_lock || return 1
     [ -d "$target_root" ] && [ ! -L "$target_root" ] || return 1
     device=$(stat -c %d "$staged_root") || return 1
     if [ "$(stat -c %d "$target_root")" != "$device" ]; then
@@ -348,7 +493,7 @@ get_lan_ipv4() {
     if command -v ifconfig >/dev/null 2>&1; then
         # 遍历 wlan0-wlan5 接口
         for i in $(seq 0 5); do
-            ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{print $2}' | head -n1)
+            ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{sub(/^addr:/, "", $2); print $2}' | head -n1)
             if [ -n "$ip" ]; then
                 echo "$ip"
                 return 0
@@ -600,6 +745,7 @@ start_tavern() (
         trap 'exit 130' INT
         trap 'exit 143' TERM
         trap 'exit 129' HUP
+        migrate_memory_limit && apply_memory_limit || return 1
         # 拿到锁之后才允许清理反代日志，避免重复启动干扰正在运行的服务。
         LOG_FILE="$HOME/setup.log"
         if [ -f "$LOG_FILE" ]; then
@@ -697,7 +843,9 @@ start_tavern() (
 # =========================================================================
 update_tavern() (
     echo -e "\n${CYAN}${BOLD}==== 更新 SillyTavern ====${NC}"
-    local dependency_status=0
+    local dependency_status=0 maintenance_fd
+    acquire_maintenance_lock || { press_any_key; return 1; }
+    migrate_memory_limit || { press_any_key; return 1; }
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern" || {
             echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败，已中止更新。${NC}"
@@ -786,7 +934,7 @@ tavern_config_menu() {
         echo -e "${RED}${BOLD}5. 恢复配置文件${NC}"
         echo -e "${CYAN}${BOLD}====================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-5）：${NC}"
-        read -n1 config_choice; echo
+        IFS= read -r -n1 config_choice || break; echo
 
         case "$config_choice" in
             0) break ;;
@@ -796,22 +944,14 @@ tavern_config_menu() {
                 if [ ! -d "$HOME/SillyTavern" ]; then
                     echo -e "${RED}${BOLD}>> [错误] 未检测到 SillyTavern 目录。${NC}"; press_any_key; continue
                 fi
-                if [ ! -f "$ST_START" ]; then
-                    echo -e "${RED}${BOLD}>> [错误] 未找到 start.sh 文件，无法修改内存限制。${NC}"
-                    press_any_key; continue
-                fi
-                [ ! -f "${ST_START}.bak" ] && cp "$ST_START" "${ST_START}.bak"
-
                 local error_msg=""
                 while true; do
                     echo -ne "${CYAN}${BOLD}请输入新的内存限制（MB，范围1024-8192）：${NC}"
-                    read mem_limit
+                    IFS= read -r mem_limit || return 0
 
                     if [ -z "$mem_limit" ]; then
                         error_msg=">> 输入不能为空，请输入有效的数字。"
-                    elif ! [[ "$mem_limit" =~ ^[0-9]+$ ]]; then
-                        error_msg=">> 请输入有效的数字。"
-                    elif [ "$mem_limit" -lt 1024 ] || [ "$mem_limit" -gt 8192 ]; then
+                    elif ! memory_limit_is_valid "$mem_limit"; then
                         error_msg=">> 请输入 1024-8192 范围内的数值。"
                     else
                         error_msg=""
@@ -821,16 +961,11 @@ tavern_config_menu() {
                     echo -e "${RED}${BOLD}$error_msg${NC}"
                 done
 
-                if grep -q 'node --max-old-space-size=[0-9]\+ "server.js" "\$@"' "$ST_START"; then
-                    sed -i "s/node --max-old-space-size=[0-9]\+ \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" "$ST_START"
-                    echo -e "${GREEN}${BOLD}>> 内存限制已设置为 ${mem_limit} MB。${NC}"
-                elif grep -q 'node "server.js" "\$@"' "$ST_START"; then
-                    sed -i "s/node \"server.js\" \"\\\$@\"/node --max-old-space-size=${mem_limit} \"server.js\" \"\\\$@\"/" "$ST_START"
-                    echo -e "${GREEN}${BOLD}>> 已插入内存限制参数，现为 ${mem_limit} MB。${NC}"
-                else
-                    echo -e "${CYAN}${BOLD}>> 未检测到标准 node 启动命令，未做更改。${NC}"
+                if ! set_memory_limit "$mem_limit" || ! migrate_memory_limit; then
+                    echo -e "${RED}${BOLD}>> 内存设置保存或迁移失败，请检查目录权限。${NC}"
                     press_any_key; continue
                 fi
+                echo -e "${GREEN}${BOLD}>> 内存限制已设置为 $((10#$mem_limit)) MB，下次启动生效。${NC}"
                 press_any_key
                 ;;
             3) startup_association_menu ;;
@@ -878,7 +1013,7 @@ lan_config_menu() {
         echo -e "${MAGENTA}${BOLD}4. 内网连接帮助${NC}"
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
-        read -n1 lan_choice; echo
+        IFS= read -r -n1 lan_choice || break; echo
         case "$lan_choice" in
             0) break ;;
             1)
@@ -890,12 +1025,12 @@ lan_config_menu() {
                     echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法开启监听。${NC}"
                     press_any_key; continue
                 fi
-                [ ! -f "${ST_CONFIG}.bak" ] && cp "$ST_CONFIG" "${ST_CONFIG}.bak"
-                sed -i 's/^listen: false$/listen: true/' "$ST_CONFIG"
-                sed -i 's/^enableUserAccounts: false$/enableUserAccounts: true/' "$ST_CONFIG"
-                sed -i 's/^enableDiscreetLogin: false$/enableDiscreetLogin: true/' "$ST_CONFIG"
-                sed -i 's/^  - 127\.0\.0\.1$/  - 0.0.0.0\/0/' "$ST_CONFIG"
-                echo -e "${GREEN}${BOLD}>> 网络监听已开启，允许外部设备访问。${NC}"
+                if { [ ! -f "${ST_CONFIG}.bak" ] && ! cp "$ST_CONFIG" "${ST_CONFIG}.bak"; } ||
+                   ! set_lan_listen true; then
+                    echo -e "${RED}${BOLD}>> 监听配置修改失败，请检查 YAML 语法、依赖和目录权限。${NC}"
+                    press_any_key; continue
+                fi
+                echo -e "${GREEN}${BOLD}>> 网络监听已开启，重启酒馆后允许外部设备访问。${NC}"
                 echo -e "${RED}${BOLD}>> 安全提醒：默认用户没有密码！${NC}"
                 echo -e "${YELLOW}${BOLD}>> 请启动酒馆后在「用户设置 → 管理用户」中为账户设置密码，${NC}"
                 echo -e "${YELLOW}${BOLD}>> 否则同一网络内的任何人都可访问你的聊天记录与 API 密钥。${NC}"
@@ -910,12 +1045,12 @@ lan_config_menu() {
                     echo -e "${RED}${BOLD}>> [错误] 未找到 config.yaml 文件，无法关闭监听。${NC}"
                     press_any_key; continue
                 fi
-                [ ! -f "${ST_CONFIG}.bak" ] && cp "$ST_CONFIG" "${ST_CONFIG}.bak"
-                sed -i 's/^listen: true$/listen: false/' "$ST_CONFIG"
-                sed -i 's/^enableUserAccounts: true$/enableUserAccounts: false/' "$ST_CONFIG"
-                sed -i 's/^enableDiscreetLogin: true$/enableDiscreetLogin: false/' "$ST_CONFIG"
-                sed -i 's/^  - 0\.0\.0\.0\/0$/  - 127.0.0.1/' "$ST_CONFIG"
-                echo -e "${RED}${BOLD}>> 网络监听已关闭，仅限本机访问。${NC}"
+                if { [ ! -f "${ST_CONFIG}.bak" ] && ! cp "$ST_CONFIG" "${ST_CONFIG}.bak"; } ||
+                   ! set_lan_listen false; then
+                    echo -e "${RED}${BOLD}>> 监听配置修改失败，原配置已保留。${NC}"
+                    press_any_key; continue
+                fi
+                echo -e "${GREEN}${BOLD}>> 监听配置已关闭，账户认证已保留；重启酒馆后仅限本机访问。${NC}"
                 press_any_key
                 ;;
             3)
@@ -1015,7 +1150,7 @@ startup_association_menu() {
         echo -e "${BLUE}${BOLD}3. 查看反代日志${NC}"
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
-        read -n1 assoc_choice; echo
+        IFS= read -r -n1 assoc_choice || break; echo
 
         case "$assoc_choice" in
             0) break ;;
@@ -1034,7 +1169,7 @@ startup_association_menu() {
                     echo -e "${YELLOW}${BOLD}>> [警告] 未检测到 Gemini-CLI-Termux 目录。${NC}"
                     echo -e "${YELLOW}${BOLD}>> 启用关联启动后，如果该目录不存在，启动将会失败。${NC}"
                     echo -ne "${CYAN}${BOLD}>> 是否仍要开启关联启动? (y/n): ${NC}"
-                    read -n1 confirm; echo
+                    IFS= read -r -n1 confirm || return 0; echo
                     if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
                         echo -e "${YELLOW}${BOLD}>> 已取消操作。${NC}"
                         press_any_key; continue
@@ -1206,7 +1341,7 @@ plugin_install_menu() {
                 echo -e "${GREEN}${BOLD}开发作者：KAKAA、青空莉想做舞台少女的狗${NC}"
                 echo -e "${MAGENTA}${BOLD}© 2026 N0VI028. All rights reserved.${NC}\n"
                 echo -ne "${YELLOW}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
-                read -n1 ans; echo
+                IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
                     PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/JS-Slash-Runner"
                     if [ -d "$PLUGIN_DIR" ]; then
@@ -1242,7 +1377,7 @@ plugin_install_menu() {
                 echo -e "${YELLOW}${BOLD}插件交流群：1030109849 / 1045423946${NC}"
                 echo -e "${MAGENTA}${BOLD}© 2026 muyoou、lesser. All rights reserved.${NC}\n"
                 echo -ne "${YELLOW}${BOLD}是否安装记忆表格？(y/n)：${NC}"
-                read -n1 ans; echo
+                IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
                     PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/st-memory-enhancement"
                     if [ -d "$PLUGIN_DIR" ]; then
@@ -1269,7 +1404,7 @@ plugin_install_menu() {
                 echo -e "${GREEN}${BOLD}开发作者：LenAnderson${NC}"
                 echo -e "${MAGENTA}${BOLD}© 2026 LenAnderson. All rights reserved.${NC}\n"
                 echo -ne "${YELLOW}${BOLD}是否安装自定义模型？(y/n)：${NC}"
-                read -n1 ans; echo
+                IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
                     PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/SillyTavern-CustomModels"
                     if [ -d "$PLUGIN_DIR" ]; then
@@ -1334,7 +1469,7 @@ plugin_uninstall_menu() {
             echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${zh_name}${NC}"
         done
         echo -e "${CYAN}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
-        read -r idx
+        IFS= read -r idx || return 0
         if [[ "$idx" == "0" ]]; then
             break
         fi
@@ -1342,7 +1477,7 @@ plugin_uninstall_menu() {
             raw_name=$(basename "${plugin_dirs[$((idx-1))]}")
             zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
             echo -ne "${YELLOW}${BOLD}是否卸载 ${zh_name}？(y/n)：${NC}"
-            read -n1 ans; echo
+            IFS= read -r -n1 ans || return 0; echo
             if [[ "$ans" =~ [yY] ]]; then
                 rm -rf "${plugin_dirs[$((idx-1))]}"
                 echo -e "${GREEN}${BOLD}>> 插件 ${zh_name} 已卸载。${NC}"
@@ -1366,7 +1501,7 @@ plugin_menu() {
         echo -e "${RED}${BOLD}2. 卸载插件${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-2）：${NC}"
-        read -n1 sub_choice; echo
+        IFS= read -r -n1 sub_choice || break; echo
         case "$sub_choice" in
             0) break ;;
             1) plugin_install_menu ;;
@@ -1389,8 +1524,16 @@ show_dependencies() {
     press_any_key
 }
 
-fix_dependencies() {
+fix_dependencies() (
     echo -e "\n${CYAN}${BOLD}==== 修复依赖环境 ====${NC}"
+    local maintenance_fd
+    if ! command -v flock >/dev/null 2>&1; then
+        pkg install -y util-linux || {
+            echo -e "${RED}${BOLD}>> flock 安装失败，已中止依赖修复。${NC}"
+            press_any_key; return 1
+        }
+    fi
+    acquire_maintenance_lock || { press_any_key; return 1; }
     mirror_source="$PREFIX/etc/termux/mirrors/europe/packages.termux.dev"
     mirror_target="$PREFIX/etc/termux/chosen_mirrors"
     if [ -f "$mirror_source" ]; then
@@ -1453,7 +1596,7 @@ fix_dependencies() {
     fi
     echo -e "${GREEN}${BOLD}>> 依赖修复完成。${NC}"
     press_any_key
-}
+)
 
 export_tavern_data() (
     echo -e "\n${CYAN}${BOLD}==== 导出酒馆数据 ====${NC}"
@@ -1586,7 +1729,7 @@ import_tavern_data() {
         done
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
-        read -r idx
+        IFS= read -r idx || return 0
         if [[ "$idx" == "0" ]]; then
             return
         fi
@@ -1613,7 +1756,7 @@ import_tavern_data() {
             echo -e "${YELLOW}${BOLD}>> 警告：将要覆盖以下目录：${dirs_info}${NC}"
             echo -e "${YELLOW}${BOLD}>> 继续操作将删除这些目录并从备份恢复。${NC}"
             echo -e "${YELLOW}${BOLD}>> 是否确认覆盖？(y/n)：${NC}\c"
-            read -n1 confirm; echo
+            IFS= read -r -n1 confirm || return 0; echo
             if ! [[ "$confirm" =~ [yY] ]]; then
                 echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
                 press_any_key; return
@@ -1713,7 +1856,7 @@ import_tavern_full() {
         done
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请输入要恢复的备份文件序号（或0返回）：${NC}"
-        read -r idx
+        IFS= read -r idx || return 0
         if [[ "$idx" == "0" ]]; then
             return
         fi
@@ -1724,7 +1867,7 @@ import_tavern_full() {
                 echo -e "${YELLOW}${BOLD}>> 警告：目标目录 ${TARGET_DIR} 已存在。"
                 echo -e ">> 继续操作将删除该目录并从备份恢复。"
                 echo -e ">> 是否确认覆盖？(y/n)：${NC}\c"
-                read -n1 confirm; echo
+                IFS= read -r -n1 confirm || return 0; echo
                 if ! [[ "$confirm" =~ [yY] ]]; then
                     echo -e "${YELLOW}${BOLD}>> 已取消恢复操作。${NC}"
                     press_any_key; return
@@ -1766,7 +1909,11 @@ import_tavern_full() {
             if [ -d "$TARGET_DIR/data" ] && [ ! -d "$TMP_RESTORE/SillyTavern/data" ]; then
                 echo -e "${YELLOW}${BOLD}>> 警告：该备份未包含 data 目录，继续恢复将移除现有用户数据。${NC}"
                 echo -ne "${YELLOW}${BOLD}>> 是否仍要继续恢复？(y/n)：${NC}"
-                read -n1 confirm; echo
+                if ! IFS= read -r -n1 confirm; then
+                    rm -rf -- "$TMP_RESTORE"
+                    press_any_key; return 1
+                fi
+                echo
                 if ! [[ "$confirm" =~ [yY] ]]; then
                     rm -rf -- "$TMP_RESTORE"
                     echo -e "${YELLOW}${BOLD}>> 已取消恢复操作，现有数据已保留。${NC}"
@@ -1848,6 +1995,9 @@ show_version_tags() (
 
 switch_tavern_version() (
     echo -e "\n${CYAN}${BOLD}==== 切换酒馆版本 ====${NC}"
+    local maintenance_fd
+    acquire_maintenance_lock || { press_any_key; return 1; }
+    migrate_memory_limit || { press_any_key; return 1; }
 
     # 检查 SillyTavern 目录
     if [ ! -d "$HOME/SillyTavern" ]; then
@@ -1878,7 +2028,7 @@ switch_tavern_version() (
     if ! git diff --quiet || ! git diff --cached --quiet; then
         echo -e "${YELLOW}${BOLD}>> 警告：检测到未提交的更改，切换版本将丢失这些更改！${NC}"
         echo -ne "${YELLOW}${BOLD}是否继续？(y/n)：${NC}"
-        read -n1 confirm; echo
+        IFS= read -r -n1 confirm || return 0; echo
         if ! [[ "$confirm" =~ [yY] ]]; then
             echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
             press_any_key
@@ -1910,7 +2060,7 @@ switch_tavern_version() (
     # 用户选择版本
     while true; do
         echo -ne "${CYAN}${BOLD}请输入版本序号后回车（或输入0返回）：${NC}"
-        read -r input_number
+        IFS= read -r input_number || return 0
 
         if [[ "$input_number" == "0" ]]; then
             echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
@@ -1943,19 +2093,24 @@ switch_tavern_version() (
     # 二次确认
     echo -e "${YELLOW}${BOLD}>> 即将切换到版本：${selected_tag}${NC}"
     echo -ne "${YELLOW}${BOLD}确认切换？(y/n)：${NC}"
-    read -n1 confirm; echo
+    IFS= read -r -n1 confirm || return 0; echo
     if ! [[ "$confirm" =~ [yY] ]]; then
         echo -e "${YELLOW}${BOLD}>> 已取消版本切换。${NC}"
         press_any_key
         return
     fi
 
+    if ! check_tag_node_compatibility "$selected_tag"; then
+        echo -e "${RED}${BOLD}>> 目标版本运行环境检查失败，现有代码和依赖已保留。${NC}"
+        press_any_key; return 1
+    fi
+
     # 执行版本切换
     echo -e "${CYAN}${BOLD}>> 正在切换到版本 ${selected_tag}...${NC}"
-    if ! git checkout -f tags/${selected_tag} 2>&1; then
+    if ! git checkout -f "refs/tags/${selected_tag}" 2>&1; then
         echo -e "${RED}${BOLD}>> 版本切换失败，请检查错误信息。${NC}"
         press_any_key
-        return
+        return 1
     fi
 
     echo -e "${GREEN}${BOLD}>> 版本切换成功。${NC}"
@@ -1969,6 +2124,7 @@ switch_tavern_version() (
     else
         echo -e "${RED}${BOLD}>> 版本已切换，但依赖安装失败，已重试 3 次。${NC}"
         echo -e "${YELLOW}${BOLD}>> 请检查网络连接，或稍后在系统维护中选择“修复依赖环境”。${NC}"
+        press_any_key; return 1
     fi
 
     press_any_key
@@ -2036,7 +2192,7 @@ version_switch_menu() {
         echo -e "${MAGENTA}${BOLD}3. 版本切换帮助${NC}"
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
-        read -n1 version_choice; echo
+        IFS= read -r -n1 version_choice || break; echo
 
         case "$version_choice" in
             0) break ;;
@@ -2062,7 +2218,7 @@ maintenance_menu() {
         echo -e "${CYAN}${BOLD}7. 酒馆版本切换${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
-        read -n1 sub_choice; echo
+        IFS= read -r -n1 sub_choice || break; echo
         case "$sub_choice" in
             0) break ;;
             1) show_dependencies ;;
@@ -2149,19 +2305,21 @@ show_update_log() {
     press_any_key
 }
 
-uninstall_all() {
+uninstall_all_files() (
     echo -e "\n${CYAN}${BOLD}==== 卸载警告 ====${NC}"
     echo -e "${RED}${BOLD}>> 即将卸载 SillyTavern 及相关配置，操作不可逆！${NC}"
     echo -ne "${YELLOW}${BOLD}是否继续？(y/n)：${NC}"
-    read -n1 confirm; echo
+    IFS= read -r -n1 confirm || return 2; echo
     if [[ "$confirm" =~ [yY] ]]; then
+        local maintenance_fd
+        acquire_maintenance_lock || { press_any_key; return 1; }
         if [ -e "$HOME/SillyTavern" ] || [ -L "$HOME/SillyTavern" ]; then
             if ! rm -rf -- "$HOME/SillyTavern"; then
                 echo -e "${RED}${BOLD}>> 酒馆目录删除失败，已中止卸载，请检查目录权限。${NC}"
                 press_any_key; return 1
             fi
         fi
-        if ! rm -f -- "$HOME/Menu.sh" "$HOME/.env" "$HOME/Install.sh"; then
+        if ! rm -f -- "$HOME/Menu.sh" "$HOME/.env" "$HOME/Install.sh" "$HOME/.st-memory-limit"; then
             echo -e "${RED}${BOLD}>> 脚本文件删除失败，卸载尚未完成。${NC}"
             press_any_key; return 1
         fi
@@ -2179,6 +2337,18 @@ uninstall_all() {
     else
         echo -e "${YELLOW}${BOLD}>> 已取消卸载。${NC}"
         sleep 1
+        return 2
+    fi
+)
+
+uninstall_all() {
+    local status
+    if uninstall_all_files; then
+        exit 0
+    else
+        status=$?
+        [ "$status" -eq 2 ] && return 0
+        return "$status"
     fi
 }
 
@@ -2192,7 +2362,7 @@ script_manage_menu() {
         echo -e "${RED}${BOLD}3. 一键卸载酒馆${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
-        read -n1 sub_choice; echo
+        IFS= read -r -n1 sub_choice || break; echo
         case "$sub_choice" in
             0) break ;;
             1) check_update ;;
@@ -2217,7 +2387,7 @@ about_script_menu() {
         echo -e "${BLUE}${BOLD}4. 资源获取${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
-        read -n1 about_choice; echo
+        IFS= read -r -n1 about_choice || break; echo
         case "$about_choice" in
             0) break ;;
             1)
@@ -2288,7 +2458,7 @@ resource_links_menu() {
         echo -e "${BLUE}${BOLD}2. 酒馆社群${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-2）：${NC}"
-        read -n1 res_choice; echo
+        IFS= read -r -n1 res_choice || break; echo
         case "$res_choice" in
             0) break ;;
             1) install_app_menu ;;
@@ -2309,7 +2479,7 @@ install_app_menu() {
         echo -e "${MAGENTA}${BOLD}1. 安装Discord${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-1）：${NC}"
-        read -n1 app_choice; echo
+        IFS= read -r -n1 app_choice || break; echo
         case "$app_choice" in
             0) break ;;
             1) install_discord_app ;;
@@ -2453,7 +2623,7 @@ while true; do
     echo -e "${BRIGHT_MAGENTA}${BOLD}7. 关于脚本${NC}"
     echo -e "${CYAN}${BOLD}=================================${NC}"
     echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
-    read -n1 choice; echo
+    IFS= read -r -n1 choice || { echo; exit 0; }; echo
     case "$choice" in
         0) echo -e "${RED}${BOLD}>> 脚本已退出，欢迎再次使用。${NC}"; sleep 0.5; clear; exit 0 ;;
         1) start_tavern ;;

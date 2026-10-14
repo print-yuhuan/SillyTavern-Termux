@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2026.10.14-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2026.10.15-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ一群](https://img.shields.io/badge/QQ一群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 [![QQ二群](https://img.shields.io/badge/QQ二群-1039656113-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/jgakXZz3Xi)
@@ -36,7 +36,14 @@
 
 ## 🆕 最近更新
 
-> 当前版本 **v2026.10.14**，本次更新修复异常退出后的启动锁恢复，并更新 Discord 应用安装资源。
+> 当前版本 **v2026.10.15**，修复代码审查发现的 9 项配置、维护与输入边界问题。
+
+- 🛡️ **监听与认证**：使用 YAML 解析、校验和原子替换修改配置；关闭监听保留账户认证，修改后重启酒馆生效
+- 🔒 **维护互斥**：恢复、更新、依赖修复、版本切换和卸载与启动共用系统锁，请先停止运行中的酒馆再维护
+- 🔧 **版本与内存**：切换前检查目标版本的 Node.js 要求；内存限制独立保存，自动迁移旧设置，更新后继续生效
+- 🧪 **安装与输入**：校验现有酒馆本体；自启动检测排除注释并检查写入结果；修复超长数字校验、输入结束循环和 Android 内网地址前缀
+
+**v2026.10.14 更新内容：**
 
 - 🔒 **启动恢复**：启动锁改用系统 `flock` 锁，相关进程结束后自动释放；升级前遗留的空锁目录会自动清理，仍在运行的服务会阻止重复启动
 - 🔧 **依赖完善**：安装与依赖修复补齐 `util-linux`，提供 `flock` 命令；目录权限或系统锁错误会单独提示
@@ -192,6 +199,8 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - **获取内网地址**：自动检测并显示设备的局域网 IP 地址
 - **查看连接帮助**：详细的局域网连接指南和常见问题解答
 
+监听配置通过校验后才写入，重启酒馆后生效。关闭监听会保留已有账户与密码认证设置。
+
 **支持的连接方式：**
 1. 两台设备连接同一 WiFi 路由器
 2. 其他设备连接本机开启的热点
@@ -256,6 +265,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 📦 先解压到临时目录并验证目录结构；替换失败时整组回滚，回滚失败会保留副本并显示位置
 - 💡 本体备份不含依赖，恢复后首次启动会自动安装（需联网）
 - 📌 恢复过程会临时占用与备份相当的额外存储空间
+- 🔒 恢复前请停止所有酒馆服务；运行会话或其他维护持有系统锁时，目录替换会被拒绝
 
 **智能权限管理：**
 - 📂 导出前自动检测存储权限，未授权时自动申请
@@ -287,6 +297,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 
 **智能依赖管理：**
 - 🔧 版本切换后自动清理旧依赖
+- 🧪 切换代码前检查目标版本的 Node.js 要求，不兼容时保留当前代码与依赖
 - ♻️ 三次重试机制确保依赖安装成功
 - 📦 失败时提供修复建议和指引
 
@@ -546,6 +557,8 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 - 编辑 `$HOME/SillyTavern/config.yaml` 自定义 SillyTavern 配置
 - 修改 `$HOME/Menu.sh` 添加自定义菜单选项
 
+菜单中的内存限制保存在 `$HOME/.st-memory-limit`，通过 `NODE_OPTIONS` 在下次启动时应用，更新酒馆后继续保留。旧版写在 `start.sh` 中的标准内存参数会在启动或更新时自动迁移。
+
 建议在修改前备份原始文件。
 </details>
 
@@ -658,6 +671,16 @@ Bug 报告<br>功能请求<br>公开讨论
 - 添加必要的注释说明
 - 保持与现有代码风格一致
 - 测试您的更改确保功能正常
+
+### 回归测试
+
+测试在 Linux/WSL 的私有临时目录运行，不操作真实酒馆数据。需要 Python、Bash、Git、Node.js、npm 和 unzip；YAML 回归还需一个已有的 `yaml` 包，可使用酒馆已安装的依赖：
+
+```bash
+ST_REVIEW_YAML_DIR="$HOME/SillyTavern/node_modules/yaml" python3 -m unittest discover -s tests -v
+```
+
+YAML 包未提供时，相应测试会明确跳过；发布前请确保这些测试也全部通过。
 
 ---
 

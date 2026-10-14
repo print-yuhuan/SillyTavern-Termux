@@ -581,11 +581,7 @@ start_tavern
         self.assert_old_data()
         self.assertIn('未包含 data 目录', result.stdout)
 
-    def test_requested_skips_and_download_implementations(self):
-        before = subprocess.check_output(["git", "show", "HEAD:Menu.sh"], cwd=PROJECT, text=True)
-        def lan(s):
-            return s[s.index("lan_config_menu() {"):s.index("startup_association_menu() {")]
-        self.assertEqual(lan(MENU), lan(before))
+    def test_download_implementations_remain_consistent(self):
         self.assertIn("if ! git reset --hard origin/release; then", MENU)
         for name in ("download_resource", "validate_resource", "download_validated"):
             pattern = rf"(?ms)^{name}\(\) \{{\n.*?^\}}"

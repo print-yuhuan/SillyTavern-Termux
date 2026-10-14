@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=2026101401
+INSTALL_VERSION=2026101501
 
 # ==== 下载与文件校验（与菜单脚本保持一致）====
 download_resource() {
@@ -86,6 +86,18 @@ download_validated() {
     fi
     rm -f -- "$tmp"
     return 1
+}
+
+validate_tavern_installation() {
+    local directory="$1"
+    [ -s "$directory/server.js" ] && [ -s "$directory/package.json" ] || return 1
+    node - "$directory/package.json" <<'JS'
+const fs = require('fs');
+try {
+    const pkg = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+    if (pkg.name !== 'sillytavern') process.exit(1);
+} catch { process.exit(1); }
+JS
 }
 
 # =========================================================================
@@ -249,6 +261,12 @@ else
     fi
 fi
 
+if ! validate_tavern_installation "$HOME/SillyTavern"; then
+    echo -e "${RED}${BOLD}>> SillyTavern 本体校验失败，已中止安装。${NC}"
+    echo -e "${YELLOW}${BOLD}>> 原目录与数据已保留，请检查 server.js 与 package.json 后重试。${NC}"
+    exit 1
+fi
+
 # =========================================================================
 # 步骤 6/8：下载菜单脚本与配置文件
 # =========================================================================
@@ -297,13 +315,15 @@ done
 if [ -z "$PROFILE_FILE" ]; then
     PROFILE_FILE="$HOME/.bashrc"
 fi
-touch "$PROFILE_FILE"
-if ! grep -qE 'bash[ ]+\$HOME/Menu\.sh' "$PROFILE_FILE"; then
-    if [ -s "$PROFILE_FILE" ]; then
-        echo '' >> "$PROFILE_FILE"
+if ! touch "$PROFILE_FILE"; then
+    echo -e "${RED}${BOLD}>> 无法创建或访问启动配置文件：${PROFILE_FILE}${NC}"
+    exit 1
+fi
+if ! grep -qE '^[[:space:]]*bash[[:space:]]+\$HOME/Menu\.sh[[:space:]]*(#.*)?$' "$PROFILE_FILE"; then
+    if ! printf '\n# SillyTavern-Termux 菜单自启动\nbash $HOME/Menu.sh\n' >> "$PROFILE_FILE"; then
+        echo -e "${RED}${BOLD}>> 写入菜单自启动失败，已中止安装，请检查：${PROFILE_FILE}${NC}"
+        exit 1
     fi
-    echo '# SillyTavern-Termux 菜单自启动' >> "$PROFILE_FILE"
-    echo 'bash $HOME/Menu.sh' >> "$PROFILE_FILE"
     echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置菜单自启动。${NC}"
 else
     echo -e "${YELLOW}${BOLD}>> 菜单自启动已配置，跳过。${NC}"
