@@ -5,6 +5,7 @@ Network/package/global process operations are stubs. File deletion and moving
 are guarded by resolved paths. Node can be native, or bridged from Windows/WSL.
 """
 import json
+import fcntl
 import os
 from pathlib import Path
 import re
@@ -513,10 +514,12 @@ start_tavern
         self.assertFalse(Path(f"/proc/{proxy}").exists())
 
     def test_duplicate_start_keeps_existing_lock(self):
-        (self.home / ".st_run.lock").mkdir()
-        result = self.run_bash("start_tavern")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue((self.home / ".st_run.lock").exists())
+        with (self.home / ".st_run.flock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result = self.run_bash("start_tavern")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("已有启动会话", result.stdout)
+            self.assertTrue((self.home / ".st_run.flock").is_file())
 
     def test_start_sigterm_cleans_process_group_and_unlocks(self):
         put(self.tavern / 'start.sh', '#!/bin/bash\necho "$BASHPID" > "$TEST_HOME/tavern.pid"\nsleep 30\n')

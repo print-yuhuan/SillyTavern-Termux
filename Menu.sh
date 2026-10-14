@@ -18,15 +18,18 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101401
+MENU_VERSION=2026101402
 UPDATE_DATE="2026-10-14"
 UPDATE_CONTENT="
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-14
 ===============================================
 
-本次更新 Discord 应用安装资源。
+本次更新修复异常退出后的启动锁恢复，并更新 Discord 应用安装资源。
 
+  ● 启动锁改用系统 flock 锁，相关进程结束后自动释放，不再因残留目录无法启动
+  ● 自动识别仍在运行的服务，安全清理旧版残留的空启动锁目录
+  ● 正常退出及挂断会话时清理本次服务，安装与依赖修复补齐 util-linux
   ● Discord 安装包更新至 348.10 - Stable（348010）
   ● 当前安装包适用于 arm64-v8a 设备，最低系统要求为 Android 7.0
   ● 下载链接已切换至仓库新发布资源，附件名称仍为 Discord.apk
@@ -432,14 +435,70 @@ install_st_deps() {
 # =========================================================================
 # 1. 启动酒馆
 # =========================================================================
+# 内核锁被进程继承并随最后一个文件描述符关闭而释放；锁文件保持固定 inode。
+# 再检查同一安装目录中的实际服务，兼容旧版启动及未继承锁的残留子进程。
+find_running_st_service() {
+    local mode="$1" owner_pid="$2" tavern_dir proxy_dir="" proc pid cwd executable arg npm_cli start_arg
+    local -a args
+    tavern_dir=$(cd "$HOME/SillyTavern" && pwd -P) || return 1
+    if [ "$mode" = "2" ] && [ -d "$HOME/Gemini-CLI-Termux" ]; then
+        proxy_dir=$(cd "$HOME/Gemini-CLI-Termux" && pwd -P) || return 1
+    fi
+    for proc in /proc/[0-9]*; do
+        pid=${proc##*/}
+        if [ "$pid" = "$owner_pid" ] || [ "$pid" = "$BASHPID" ]; then
+            continue
+        fi
+        cwd=$(readlink -- "$proc/cwd" 2>/dev/null) || continue
+        [ "$cwd" = "$tavern_dir" ] || { [ -n "$proxy_dir" ] && [ "$cwd" = "$proxy_dir" ]; } || continue
+        args=()
+        { mapfile -d '' -t args < "$proc/cmdline"; } 2>/dev/null || continue
+        [ "${#args[@]}" -gt 0 ] || continue
+        executable=${args[0]##*/}
+        if [ "$cwd" = "$tavern_dir" ]; then
+            case "$executable" in
+                node|nodejs|npm|bash|sh)
+                    for arg in "${args[@]:1}"; do
+                        case "${arg##*/}" in
+                            server.js|start.sh)
+                                echo "$pid"; return 0 ;;
+                        esac
+                    done
+                    # npm start / npm run start 可能由 node 执行 npm-cli.js。
+                    npm_cli=0; start_arg=0
+                    for arg in "${args[@]:1}"; do
+                        [ "${arg##*/}" = "npm-cli.js" ] && npm_cli=1
+                        [ "$arg" = "start" ] && start_arg=1
+                    done
+                    if [ "$start_arg" -eq 1 ] && { [ "$executable" = "npm" ] || [ "$npm_cli" -eq 1 ]; }; then
+                        echo "$pid"; return 0
+                    fi
+                    ;;
+            esac
+        else
+            case "$executable" in
+                python|python3|python3.*)
+                    for arg in "${args[@]:1}"; do
+                        if [ "${arg##*/}" = "run.py" ]; then
+                            echo "$pid"; return 0
+                        fi
+                    done
+                    ;;
+            esac
+        fi
+    done
+    return 1
+}
+
 start_tavern() (
     echo -e "\n${CYAN}${BOLD}==== 启动 SillyTavern ====${NC}"
 
     # 依赖检测
-    for dep in node npm git; do
+    for dep in node npm git flock; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，请先修复依赖环境。${NC}"
-            press_any_key; return
+            [ "$dep" = "flock" ] && echo -e "${YELLOW}${BOLD}>> 也可运行 pkg install util-linux 安装启动锁依赖。${NC}"
+            press_any_key; return 1
         fi
     done
 
@@ -467,29 +526,51 @@ start_tavern() (
         press_any_key; return
     fi
 
-    # 检测并清理大型日志文件
-    LOG_FILE="$HOME/setup.log"
-    if [ -f "$LOG_FILE" ]; then
-        LOG_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || stat -f%z "$LOG_FILE" 2>/dev/null)
-        if [ "$LOG_SIZE" -gt 5242880 ]; then  # 5MB = 5*1024*1024
-            echo -e "${YELLOW}${BOLD}>> 检测到日志文件超过 5MB，正在清理...${NC}"
-            rm -f "$LOG_FILE"
-            touch "$LOG_FILE"
-            echo -e "${GREEN}${BOLD}>> 日志文件已重置。${NC}"
-        fi
-    fi
-
     # SillyTavern 目录检测
     if [ -d "$HOME/SillyTavern" ]; then
         cd "$HOME/SillyTavern" || {
             echo -e "${RED}${BOLD}>> 进入 SillyTavern 目录失败，已中止启动。${NC}"
             press_any_key; return 1
         }
-        local session_lock="$HOME/.st_run.lock" proxy_pid="" tavern_pid="" wake_locked=0
-        if ! mkdir "$session_lock" 2>/dev/null; then
-            echo -e "${YELLOW}${BOLD}>> 检测到已有启动会话或启动目录不可写，已取消重复启动。${NC}"
-            echo -e "${CYAN}${BOLD}>> 若服务已停止，请检查并清理启动锁目录：${session_lock}${NC}"
+        local session_lock="$HOME/.st_run.flock" legacy_lock="$HOME/.st_run.lock" session_fd lock_status running_pid
+        local session_owner="$BASHPID"
+        local proxy_pid="" tavern_pid="" wake_locked=0
+        if [ -L "$session_lock" ] || { [ -e "$session_lock" ] && [ ! -f "$session_lock" ]; }; then
+            echo -e "${RED}${BOLD}>> 启动锁路径异常，请检查：${session_lock}${NC}"
             press_any_key; return 1
+        fi
+        umask 077
+        if ! { exec {session_fd}>>"$session_lock"; } 2>/dev/null; then
+            echo -e "${RED}${BOLD}>> 无法打开启动锁文件，请检查主目录权限或存储空间。${NC}"
+            press_any_key; return 1
+        fi
+        if flock -n -E 75 "$session_fd"; then
+            :
+        else
+            lock_status=$?
+            if [ "$lock_status" -eq 75 ]; then
+                echo -e "${YELLOW}${BOLD}>> 检测到已有启动会话或服务仍在运行，已取消重复启动。${NC}"
+                echo -e "${CYAN}${BOLD}>> 请返回原会话使用 Ctrl+C 停止服务，或结束 Termux 的全部会话后重试。${NC}"
+            else
+                echo -e "${RED}${BOLD}>> 无法获取系统启动锁，请检查目录权限或运行环境。${NC}"
+            fi
+            exec {session_fd}>&-
+            press_any_key; return 1
+        fi
+        if running_pid=$(find_running_st_service "$START_MODE" "$session_owner"); then
+            echo -e "${YELLOW}${BOLD}>> 检测到现有服务仍在运行（PID：${running_pid}），已取消重复启动。${NC}"
+            echo -e "${CYAN}${BOLD}>> 请先停止现有服务后重试，无需手动删除启动锁。${NC}"
+            exec {session_fd}>&-
+            press_any_key; return 1
+        fi
+        if [ -e "$legacy_lock" ] || [ -L "$legacy_lock" ]; then
+            if [ ! -L "$legacy_lock" ] && [ -d "$legacy_lock" ] && rmdir -- "$legacy_lock" 2>/dev/null; then
+                echo -e "${CYAN}${BOLD}>> 已自动清理旧版残留启动锁，可以重新启动。${NC}"
+            else
+                echo -e "${RED}${BOLD}>> 旧版启动锁路径异常或目录非空，请检查：${legacy_lock}${NC}"
+                exec {session_fd}>&-
+                press_any_key; return 1
+            fi
         fi
         stop_session_process() {
             local pid="$1" attempt
@@ -512,11 +593,27 @@ start_tavern() (
             if [ "$wake_locked" -eq 1 ]; then
                 command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock
             fi
-            rmdir -- "$session_lock" 2>/dev/null || true
+            # 不删除锁文件，也不显式解锁；残留子进程持有描述符时继续保护会话。
+            exec {session_fd}>&-
         }
         trap cleanup_session EXIT
         trap 'exit 130' INT
         trap 'exit 143' TERM
+        trap 'exit 129' HUP
+        # 拿到锁之后才允许清理反代日志，避免重复启动干扰正在运行的服务。
+        LOG_FILE="$HOME/setup.log"
+        if [ -f "$LOG_FILE" ]; then
+            LOG_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || stat -f%z "$LOG_FILE" 2>/dev/null)
+            if [ "$LOG_SIZE" -gt 5242880 ]; then
+                echo -e "${YELLOW}${BOLD}>> 检测到日志文件超过 5MB，正在清理...${NC}"
+                if rm -f "$LOG_FILE" && touch "$LOG_FILE"; then
+                    echo -e "${GREEN}${BOLD}>> 日志文件已重置。${NC}"
+                else
+                    echo -e "${RED}${BOLD}>> 日志重置失败，请检查存储空间或目录权限。${NC}"
+                    return 1
+                fi
+            fi
+        fi
         # 每个后台服务独占进程组，只清理本次会话创建的进程及其子进程。
         set -m
         if command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock; then
@@ -1308,10 +1405,12 @@ fix_dependencies() {
         echo -e "${RED}${BOLD}>> 软件包更新失败，已中止依赖修复，请检查网络连接。${NC}"
         press_any_key; return 1
     fi
-    for dep in git curl zip unzip; do
+    for dep in git curl zip unzip flock; do
         if ! command -v $dep >/dev/null 2>&1; then
             echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
-            if ! pkg install -y "$dep"; then
+            local package="$dep"
+            [ "$dep" = "flock" ] && package="util-linux"
+            if ! pkg install -y "$package"; then
                 echo -e "${RED}${BOLD}>> $dep 安装失败，依赖修复尚未完成。${NC}"
                 press_any_key; return 1
             fi
@@ -1336,7 +1435,7 @@ fix_dependencies() {
     else
         echo -e "${GREEN}${BOLD}>> node 已安装，跳过。${NC}"
     fi
-    for dep in git curl zip unzip node npm; do
+    for dep in git curl zip unzip flock node npm; do
         if ! command -v "$dep" >/dev/null 2>&1; then
             echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，依赖修复尚未完成。${NC}"
             press_any_key; return 1

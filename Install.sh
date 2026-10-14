@@ -12,7 +12,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ==== 版本号 ====
-INSTALL_VERSION=20261013
+INSTALL_VERSION=2026101401
 
 # ==== 下载与文件校验（与菜单脚本保持一致）====
 download_resource() {
@@ -148,10 +148,12 @@ echo -e "${GREEN}${BOLD}>> 步骤 2/8 完成：包管理器已更新。${NC}"
 # 步骤 3/8：安装依赖
 # =========================================================================
 echo -e "\n${CYAN}${BOLD}==== 步骤 3/8：安装依赖 ====${NC}"
-for dep in git curl zip unzip; do
+for dep in git curl zip unzip flock; do
     if ! command -v $dep >/dev/null 2>&1; then
         echo -e "${YELLOW}${BOLD}>> 检测到未安装：$dep，正在安装...${NC}"
-        if ! pkg install -y "$dep"; then
+        package="$dep"
+        [ "$dep" = "flock" ] && package="util-linux"
+        if ! pkg install -y "$package"; then
             echo -e "${RED}${BOLD}>> $dep 安装失败，已中止安装，请检查网络或存储空间。${NC}"
             exit 1
         fi
@@ -178,7 +180,7 @@ else
     echo -e "${CYAN}${BOLD}>> node 已安装，跳过。${NC}"
 fi
 
-for dep in git curl zip unzip node npm; do
+for dep in git curl zip unzip flock node npm; do
     if ! command -v "$dep" >/dev/null 2>&1; then
         echo -e "${RED}${BOLD}>> 检测到缺失依赖：$dep，已中止安装。${NC}"
         exit 1
