@@ -18,7 +18,7 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101602
+MENU_VERSION=2026101603
 UPDATE_DATE="2026-10-16"
 UPDATE_CONTENT="
 ===============================================
@@ -26,7 +26,7 @@ SillyTavern-Termux 更新日志 2026-10-16
 ===============================================
 
   ● 依据上游文档与参考资料补全七个插件的介绍、亮点和使用须知
-  ● 恢复插件列表与详情页标题的多色样式，统一符号、换行和作者署名
+  ● 插件菜单与详情页配色严格对照 cc0e75b，保留现有文案与版权格式
   ● 区分插件与配套预设的要求和署名，保留上游许可说明
   ● 全部插件统一使用 © 2026 英文版权页脚，交流反馈使用「官方Q群」
 
@@ -1267,19 +1267,19 @@ startup_association_menu() {
 # 4. 酒馆插件
 # =========================================================================
 # 插件说明只负责展示；安装、卸载逻辑保持独立。
-# 标题按板块使用不同强调色；正文使用终端默认色，链接亮蓝色。
+# 配色以 cc0e75b 为基准；新增说明板块沿用该版本已有的同类板块颜色。
 plugin_detail_section() {
-    local title="$1" content="$2" title_color="${3:-$CYAN$BOLD}" text_color="${4:-$NC}"
+    local title="$1" content="$2" title_color="${3:-$CYAN$BOLD}" text_color="${4:-$WHITE}"
     [ -n "$content" ] || return 0
     printf '%b%s：%b\n%b%s%b\n\n' "$title_color" "$title" "$NC" "$text_color" "$content" "$NC"
 }
 
 show_community_plugin_details() {
     local name repo author copyright_owner heading_color introduction highlights usage safety="" documents="" license_info=""
-    local preset_author="" community=""
+    local preset_author="" community="" introduction_color="$WHITE" highlights_color="$WHITE"
     case "$1" in
         JS-Slash-Runner)
-            copyright_owner="N0VI028" heading_color="$GREEN"
+            copyright_owner="N0VI028" heading_color="$GREEN" introduction_color="$GREEN"
             name="酒馆助手"
             repo="https://github.com/N0VI028/JS-Slash-Runner"
             author="KAKAA、青空莉想做舞台少女的狗"
@@ -1291,7 +1291,7 @@ show_community_plugin_details() {
             license_info=$'许可协议：PolyForm Noncommercial 1.0.0\n完整条款：仓库 LICENSE 文件。'
             ;;
         st-memory-enhancement)
-            copyright_owner="muyoou、lesser" heading_color="$BLUE"
+            copyright_owner="muyoou、lesser" heading_color="$BLUE" highlights_color="$GREEN"
             name="记忆表格"
             repo="https://github.com/muyoou/st-memory-enhancement"
             author="木悠"
@@ -1304,7 +1304,7 @@ show_community_plugin_details() {
             license_info=""
             ;;
         SillyTavern-CustomModels)
-            copyright_owner="LenAnderson" heading_color="$MAGENTA"
+            copyright_owner="LenAnderson" heading_color="$MAGENTA" highlights_color="$GREEN"
             name="自定义模型"
             repo="https://github.com/LenAnderson/SillyTavern-CustomModels"
             author="LenAnderson"
@@ -1327,7 +1327,7 @@ show_community_plugin_details() {
             license_info=$'许可协议：Apache License 2.0，含自定义署名要求。\n完整条款：docs/LICENSE.md、docs/COPYRIGHT、docs/NOTICE。'
             ;;
         ST-BaiBai-Book)
-            copyright_owner="BaiBai" heading_color="$BRIGHT_BLUE"
+            copyright_owner="BaiBai" heading_color="$CYAN"
             name="柏宝书"
             repo="https://github.com/baibai-git/ST-BaiBai-Book"
             author="柏柏"
@@ -1338,7 +1338,7 @@ show_community_plugin_details() {
             license_info=""
             ;;
         ST-Prompt-Template)
-            copyright_owner="zonde306" heading_color="$BRIGHT_MAGENTA"
+            copyright_owner="zonde306" heading_color="$CYAN"
             name="提示词模板"
             repo="https://github.com/zonde306/ST-Prompt-Template"
             author="zonde306"
@@ -1350,7 +1350,7 @@ show_community_plugin_details() {
             license_info=$'许可协议：GNU AGPL-3.0\n完整条款：仓库 LICENSE 文件。'
             ;;
         shujuku)
-            copyright_owner="Albus" heading_color="$GREEN"
+            copyright_owner="Albus" heading_color="$CYAN"
             name="龙血玄黄·数据库"
             repo="https://github.com/AlbusKen/shujuku"
             author="Albus"
@@ -1363,19 +1363,19 @@ show_community_plugin_details() {
     esac
     clear
     printf '%b====== %s ======%b\n\n' "$heading_color$BOLD" "$name" "$NC"
-    plugin_detail_section "仓库地址" "$repo" "$YELLOW$BOLD" '\033[0;94m'
-    plugin_detail_section "插件简介" "$introduction"
-    plugin_detail_section "核心亮点" "$highlights" "$BRIGHT_BLUE$BOLD"
-    plugin_detail_section "使用须知" "$usage" "$GREEN$BOLD"
+    plugin_detail_section "仓库地址" "$repo" "$YELLOW$BOLD" "$NC"
+    plugin_detail_section "插件简介" "$introduction" "$CYAN$BOLD" "$introduction_color"
+    plugin_detail_section "核心亮点" "$highlights" "$BLUE$BOLD" "$highlights_color"
+    plugin_detail_section "使用须知" "$usage" "$YELLOW$BOLD"
     plugin_detail_section "安全提示" "$safety" "$YELLOW$BOLD"
-    plugin_detail_section "参考文档" "$documents" "$BRIGHT_MAGENTA$BOLD" '\033[0;94m'
-    plugin_detail_section "交流反馈" "$community" "$MAGENTA$BOLD"
-    printf '%b插件名称：%b%s\n' "$CYAN$BOLD" "$NC" "$name"
-    printf '%b开发作者：%b%s\n' "$GREEN$BOLD" "$NC" "$author"
-    [ -z "$preset_author" ] || printf '%b预设作者：%b%s\n' "$GREEN$BOLD" "$NC" "$preset_author"
+    plugin_detail_section "参考文档" "$documents" "$YELLOW$BOLD" "$NC"
+    plugin_detail_section "交流反馈" "$community" "$YELLOW$BOLD" "$YELLOW$BOLD"
+    printf '%b插件名称：%s%b\n' "$CYAN$BOLD" "$name" "$NC"
+    printf '%b开发作者：%s%b\n' "$GREEN$BOLD" "$author" "$NC"
+    [ -z "$preset_author" ] || printf '%b预设作者：%s%b\n' "$GREEN$BOLD" "$preset_author" "$NC"
     printf '\n'
     echo -e "${MAGENTA}${BOLD}© 2026 ${copyright_owner}. All rights reserved.${NC}\n"
-    plugin_detail_section "许可说明" "$license_info" "$BRIGHT_BLUE$BOLD"
+    plugin_detail_section "许可说明" "$license_info" "$MAGENTA$BOLD" "$MAGENTA$BOLD"
 }
 
 install_community_plugin() {
@@ -1420,13 +1420,13 @@ plugin_install_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        printf '%b1. 酒馆助手%b（脚本与交互界面）%b\n' "$GREEN$BOLD" "$YELLOW$BOLD" "$NC"
-        printf '%b2. 记忆表格%b（结构化长期记忆）%b\n' "$BLUE$BOLD" "$GREEN$BOLD" "$NC"
-        printf '%b3. 自定义模型%b（补充模型名称）%b\n' "$MAGENTA$BOLD" "$CYAN$BOLD" "$NC"
-        printf '%b4. 小白X%b（剧情与互动工具）%b\n' "$CYAN$BOLD" "$GREEN$BOLD" "$NC"
-        printf '%b5. 柏宝书%b（摘要与记忆召回）%b\n' "$BRIGHT_BLUE$BOLD" "$GREEN$BOLD" "$NC"
-        printf '%b6. 提示词模板%b（EJS 动态提示词）%b\n' "$BRIGHT_MAGENTA$BOLD" "$CYAN$BOLD" "$NC"
-        printf '%b7. 龙血玄黄·数据库%b（剧情数据与世界书）%b\n' "$GREEN$BOLD" "$CYAN$BOLD" "$NC"
+        echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（脚本与交互界面）${NC}"
+        echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化长期记忆）${NC}"
+        echo -e "${MAGENTA}${BOLD}3. 自定义模型    ${CYAN}${BOLD}（补充模型名称）${NC}"
+        echo -e "${CYAN}${BOLD}4. 小白X         ${GREEN}${BOLD}（剧情与互动工具）${NC}"
+        echo -e "${BRIGHT_BLUE}${BOLD}5. 柏宝书        ${GREEN}${BOLD}（摘要与记忆召回）${NC}"
+        echo -e "${BRIGHT_MAGENTA}${BOLD}6. 提示词模板    ${CYAN}${BOLD}（EJS 动态提示词）${NC}"
+        echo -e "${GREEN}${BOLD}7. 龙血玄黄·数据库 ${CYAN}${BOLD}（剧情数据与世界书）${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
         read -n1 -r plugin_choice || break; echo
