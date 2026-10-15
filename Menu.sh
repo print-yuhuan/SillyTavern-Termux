@@ -18,7 +18,7 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101601
+MENU_VERSION=2026101602
 UPDATE_DATE="2026-10-16"
 UPDATE_CONTENT="
 ===============================================
@@ -26,8 +26,9 @@ SillyTavern-Termux 更新日志 2026-10-16
 ===============================================
 
   ● 依据上游文档与参考资料补全七个插件的介绍、亮点和使用须知
-  ● 统一插件列表与详情页的颜色、标题、符号、换行和作者署名
-  ● 区分插件与配套预设的要求和署名，版权与许可按上游声明展示
+  ● 恢复插件列表与详情页标题的多色样式，统一符号、换行和作者署名
+  ● 区分插件与配套预设的要求和署名，保留上游许可说明
+  ● 全部插件统一使用 © 2026 英文版权页脚，交流反馈使用「官方Q群」
 
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-15
@@ -1266,7 +1267,7 @@ startup_association_menu() {
 # 4. 酒馆插件
 # =========================================================================
 # 插件说明只负责展示；安装、卸载逻辑保持独立。
-# 标题青色加粗，正文使用终端默认色，链接亮蓝色，安全提示标题黄色。
+# 标题按板块使用不同强调色；正文使用终端默认色，链接亮蓝色。
 plugin_detail_section() {
     local title="$1" content="$2" title_color="${3:-$CYAN$BOLD}" text_color="${4:-$NC}"
     [ -n "$content" ] || return 0
@@ -1274,10 +1275,11 @@ plugin_detail_section() {
 }
 
 show_community_plugin_details() {
-    local name repo author introduction highlights usage safety="" documents="" copyright_info=""
+    local name repo author copyright_owner heading_color introduction highlights usage safety="" documents="" license_info=""
     local preset_author="" community=""
     case "$1" in
         JS-Slash-Runner)
+            copyright_owner="N0VI028" heading_color="$GREEN"
             name="酒馆助手"
             repo="https://github.com/N0VI028/JS-Slash-Runner"
             author="KAKAA、青空莉想做舞台少女的狗"
@@ -1286,9 +1288,10 @@ show_community_plugin_details() {
             usage=$'· 当前上游要求 SillyTavern 1.13.0 或更新版本。\n· 安装后刷新页面，按角色卡说明配置脚本与渲染。'
             safety=$'· 自定义脚本可读取 API 密钥、聊天记录和设置。\n· 仅导入来源可信、功能明确的脚本与前端内容。'
             documents="https://n0vi028.github.io/JS-Slash-Runner-Doc/"
-            copyright_info=$'© 2026 N0VI028\n许可协议：PolyForm Noncommercial 1.0.0\n完整条款：仓库 LICENSE 文件。'
+            license_info=$'许可协议：PolyForm Noncommercial 1.0.0\n完整条款：仓库 LICENSE 文件。'
             ;;
         st-memory-enhancement)
+            copyright_owner="muyoou、lesser" heading_color="$BLUE"
             name="记忆表格"
             repo="https://github.com/muyoou/st-memory-enhancement"
             author="木悠"
@@ -1297,10 +1300,11 @@ show_community_plugin_details() {
             highlights=$'· 结构化记录：按模板整理角色、事件和物品信息。\n· 模板管理：保存不同作用域的模板，导入导出配置。\n· 提示词注入：配合深度注入、全局宏和世界书。\n· 表格展示：在聊天中查看数据，按需编辑展示样式。'
             usage=$'· 仅适用于聊天补全模式；安装后选择表格模板。\n· 使用 LSR 配套预设时，按其说明配置提示词模板、\n  世界书与正则；这些配置不是插件的通用依赖。\n· 导入前备份；聊天中替换模板时确认数据处理方式。\n· 定期检查填表结果；LSR 预设的大总结需手动触发。'
             documents=$'使用教程：https://muyoo.com.cn/memory/doc/start\n问题自查：https://muyoo.com.cn/memory/doc/installFaq'
-            community="官方 README 公布的 QQ 群：1030109849"
-            copyright_info=""
+            community="官方Q群：1030109849"
+            license_info=""
             ;;
         SillyTavern-CustomModels)
+            copyright_owner="LenAnderson" heading_color="$MAGENTA"
             name="自定义模型"
             repo="https://github.com/LenAnderson/SillyTavern-CustomModels"
             author="LenAnderson"
@@ -1308,9 +1312,10 @@ show_community_plugin_details() {
             highlights=$'· 连接支持：适用于 OpenAI、Claude 和 Google/Gemini。\n· 名称补充：在扩展设置中添加需要的模型名称。'
             usage=$'· 先配置可用接口，再填写服务商提供的准确模型名。\n· 插件只补充名称；模型权限与可用性由接口服务决定。'
             documents="https://github.com/LenAnderson/SillyTavern-CustomModels/blob/master/README.md"
-            copyright_info=""
+            license_info=""
             ;;
         LittleWhiteBox)
+            copyright_owner="biex" heading_color="$CYAN"
             name="小白X"
             repo="https://github.com/RT15548/LittleWhiteBox"
             author="biex"
@@ -1319,9 +1324,10 @@ show_community_plugin_details() {
             usage=$'· 刷新页面后，在「扩展设置 → 小白X」启用所需模块。\n· 绘图、语音等功能需另行配置对应服务与凭据。'
             safety=$'· 渲染内容可执行脚本；仅启用可信模板和代码。\n· 对接外部服务前，确认发送内容与 API 使用范围。'
             documents="https://docs.littlewhitebox.qzz.io/"
-            copyright_info=$'© 2025 biex\n许可协议：Apache License 2.0，含自定义署名要求。\n完整条款：docs/LICENSE.md、docs/COPYRIGHT、docs/NOTICE。'
+            license_info=$'许可协议：Apache License 2.0，含自定义署名要求。\n完整条款：docs/LICENSE.md、docs/COPYRIGHT、docs/NOTICE。'
             ;;
         ST-BaiBai-Book)
+            copyright_owner="BaiBai" heading_color="$BRIGHT_BLUE"
             name="柏宝书"
             repo="https://github.com/baibai-git/ST-BaiBai-Book"
             author="柏柏"
@@ -1329,9 +1335,10 @@ show_community_plugin_details() {
             highlights=$'· 自动摘要：逐楼记录剧情，合并为多层总结。\n· 剧情台账：跟踪人物、物品、地点、计划与悬念。\n· 时间管理：记录故事内时间，梳理事件先后关系。\n· 向量召回：按需检索相关历史，补充当前上下文。\n· 记忆延续：携带数据新建对话，导入旧总结或 Horae 数据。'
             usage=$'· 需要 SillyTavern 1.12.13 或更新版本。\n· 安装后打开「柏宝书 · 记忆引擎」总开关。\n· 摘要可跟随主 API，也可单独配置副 API。\n· 向量记忆为可选功能；使用前配置服务并评估耗时。\n· 记忆数据跟随聊天保存，删除聊天前请先备份。'
             documents="https://github.com/baibai-git/ST-BaiBai-Book/blob/main/README.md"
-            copyright_info=""
+            license_info=""
             ;;
         ST-Prompt-Template)
+            copyright_owner="zonde306" heading_color="$BRIGHT_MAGENTA"
             name="提示词模板"
             repo="https://github.com/zonde306/ST-Prompt-Template"
             author="zonde306"
@@ -1340,33 +1347,35 @@ show_community_plugin_details() {
             usage=$'· 在扩展设置中启用插件，再使用兼容 EJS 的模板。\n· 模板语句可能在生成与渲染时执行，需按文档配置。\n· 修改预设、世界书或变量初始化内容前请先备份。'
             safety=$'· EJS 模板能够执行 JavaScript，并读写酒馆数据。\n· 仅使用可信模板，检查 AI 输出中的可执行语句。'
             documents="https://github.com/zonde306/ST-Prompt-Template/blob/main/docs/features_cn.md"
-            copyright_info=$'许可协议：GNU AGPL-3.0\n完整条款：仓库 LICENSE 文件。'
+            license_info=$'许可协议：GNU AGPL-3.0\n完整条款：仓库 LICENSE 文件。'
             ;;
         shujuku)
+            copyright_owner="Albus" heading_color="$GREEN"
             name="龙血玄黄·数据库"
             repo="https://github.com/AlbusKen/shujuku"
             author="Albus"
             introduction=$'以结构化表格和剧情纪要整理长期记忆，\n结合世界书同步与按需召回，为后续对话提供参考。'
             highlights=$'· 剧情数据：记录时间、地点、人物、物品、技能和任务。\n· 自动更新：按对话更新表格与纪要，也可手动同步。\n· 世界书联动：同步表格内容与索引，配置关键词注入。\n· 记忆召回：按需配置剧情纪要的向量检索。\n· 模板编辑：使用默认表格，或调整模板与生成配置。'
             usage=$'· 当前入口安装插件版；不要同时运行同一脚本版。\n· 插件模式可独立运行，酒馆助手为可选依赖。\n· 使用酒馆预设 API 生成需酒馆助手；也可用自定义 API。\n· 向量检索需另配相关接口；迁移前备份聊天和世界书。'
-            copyright_info=""
+            license_info=""
             ;;
         *) return 1 ;;
     esac
     clear
-    printf '%b====== %s ======%b\n\n' "$CYAN$BOLD" "$name" "$NC"
-    plugin_detail_section "仓库地址" "$repo" "$CYAN$BOLD" '\033[0;94m'
+    printf '%b====== %s ======%b\n\n' "$heading_color$BOLD" "$name" "$NC"
+    plugin_detail_section "仓库地址" "$repo" "$YELLOW$BOLD" '\033[0;94m'
     plugin_detail_section "插件简介" "$introduction"
-    plugin_detail_section "核心亮点" "$highlights"
-    plugin_detail_section "使用须知" "$usage"
+    plugin_detail_section "核心亮点" "$highlights" "$BRIGHT_BLUE$BOLD"
+    plugin_detail_section "使用须知" "$usage" "$GREEN$BOLD"
     plugin_detail_section "安全提示" "$safety" "$YELLOW$BOLD"
-    plugin_detail_section "参考文档" "$documents" "$CYAN$BOLD" '\033[0;94m'
-    plugin_detail_section "交流反馈" "$community"
+    plugin_detail_section "参考文档" "$documents" "$BRIGHT_MAGENTA$BOLD" '\033[0;94m'
+    plugin_detail_section "交流反馈" "$community" "$MAGENTA$BOLD"
     printf '%b插件名称：%b%s\n' "$CYAN$BOLD" "$NC" "$name"
-    printf '%b开发作者：%b%s\n' "$CYAN$BOLD" "$NC" "$author"
-    [ -z "$preset_author" ] || printf '%b预设作者：%b%s\n' "$CYAN$BOLD" "$NC" "$preset_author"
+    printf '%b开发作者：%b%s\n' "$GREEN$BOLD" "$NC" "$author"
+    [ -z "$preset_author" ] || printf '%b预设作者：%b%s\n' "$GREEN$BOLD" "$NC" "$preset_author"
     printf '\n'
-    plugin_detail_section "版权与许可" "$copyright_info"
+    echo -e "${MAGENTA}${BOLD}© 2026 ${copyright_owner}. All rights reserved.${NC}\n"
+    plugin_detail_section "许可说明" "$license_info" "$BRIGHT_BLUE$BOLD"
 }
 
 install_community_plugin() {
@@ -1411,13 +1420,13 @@ plugin_install_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        printf '%b1. 酒馆助手%b（脚本与交互界面）\n' "$GREEN$BOLD" "$NC"
-        printf '%b2. 记忆表格%b（结构化长期记忆）\n' "$GREEN$BOLD" "$NC"
-        printf '%b3. 自定义模型%b（补充模型名称）\n' "$GREEN$BOLD" "$NC"
-        printf '%b4. 小白X%b（剧情与互动工具）\n' "$GREEN$BOLD" "$NC"
-        printf '%b5. 柏宝书%b（摘要与记忆召回）\n' "$GREEN$BOLD" "$NC"
-        printf '%b6. 提示词模板%b（EJS 动态提示词）\n' "$GREEN$BOLD" "$NC"
-        printf '%b7. 龙血玄黄·数据库%b（剧情数据与世界书）\n' "$GREEN$BOLD" "$NC"
+        printf '%b1. 酒馆助手%b（脚本与交互界面）%b\n' "$GREEN$BOLD" "$YELLOW$BOLD" "$NC"
+        printf '%b2. 记忆表格%b（结构化长期记忆）%b\n' "$BLUE$BOLD" "$GREEN$BOLD" "$NC"
+        printf '%b3. 自定义模型%b（补充模型名称）%b\n' "$MAGENTA$BOLD" "$CYAN$BOLD" "$NC"
+        printf '%b4. 小白X%b（剧情与互动工具）%b\n' "$CYAN$BOLD" "$GREEN$BOLD" "$NC"
+        printf '%b5. 柏宝书%b（摘要与记忆召回）%b\n' "$BRIGHT_BLUE$BOLD" "$GREEN$BOLD" "$NC"
+        printf '%b6. 提示词模板%b（EJS 动态提示词）%b\n' "$BRIGHT_MAGENTA$BOLD" "$CYAN$BOLD" "$NC"
+        printf '%b7. 龙血玄黄·数据库%b（剧情数据与世界书）%b\n' "$GREEN$BOLD" "$CYAN$BOLD" "$NC"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
         read -n1 -r plugin_choice || break; echo
@@ -1515,7 +1524,7 @@ plugin_uninstall_menu() {
         for i in "${!plugin_dirs[@]}"; do
             raw_name=$(basename "${plugin_dirs[$i]}")
             zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
-            printf '%b%s. %s%b\n' "$GREEN$BOLD" "$((i+1))" "$zh_name" "$NC"
+            echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${zh_name}${NC}"
         done
         echo -e "${CYAN}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
         IFS= read -r idx || return 0
