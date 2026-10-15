@@ -3,6 +3,7 @@
 Use the private HOME and guarded file operations from test_safety. Git cloning is
 stubbed; no network requests, browser actions or real plugin installs occur.
 """
+import re
 import unittest
 
 import test_safety
@@ -105,11 +106,12 @@ git() {
 
     def test_database_details_distinguish_plugin_and_author(self):
         result = self.run_menu("7n0")
-        self.assertIn("插件名称：龙血玄黄·数据库", result.stdout)
-        self.assertIn("开发作者：Albus", result.stdout)
-        self.assertIn("https://github.com/AlbusKen/shujuku", result.stdout)
-        self.assertIn("酒馆助手为可选依赖", result.stdout)
-        self.assertNotIn("开发作者：阿不思", result.stdout)
+        text = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
+        self.assertIn("插件名称：龙血玄黄·数据库", text)
+        self.assertIn("开发作者：Albus", text)
+        self.assertIn("https://github.com/AlbusKen/shujuku", text)
+        self.assertIn("酒馆助手为可选依赖", text)
+        self.assertNotIn("开发作者：阿不思", text)
 
     def test_uninstall_names_and_selected_directory_match(self):
         for folder, _, _ in PLUGINS:

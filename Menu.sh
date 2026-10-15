@@ -18,9 +18,17 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101504
-UPDATE_DATE="2026-10-15"
+MENU_VERSION=2026101601
+UPDATE_DATE="2026-10-16"
 UPDATE_CONTENT="
+===============================================
+SillyTavern-Termux 更新日志 2026-10-16
+===============================================
+
+  ● 依据上游文档与参考资料补全七个插件的介绍、亮点和使用须知
+  ● 统一插件列表与详情页的颜色、标题、符号、换行和作者署名
+  ● 区分插件与配套预设的要求和署名，版权与许可按上游声明展示
+
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-15
 ===============================================
@@ -1257,21 +1265,115 @@ startup_association_menu() {
 # =========================================================================
 # 4. 酒馆插件
 # =========================================================================
+# 插件说明只负责展示；安装、卸载逻辑保持独立。
+# 标题青色加粗，正文使用终端默认色，链接亮蓝色，安全提示标题黄色。
+plugin_detail_section() {
+    local title="$1" content="$2" title_color="${3:-$CYAN$BOLD}" text_color="${4:-$NC}"
+    [ -n "$content" ] || return 0
+    printf '%b%s：%b\n%b%s%b\n\n' "$title_color" "$title" "$NC" "$text_color" "$content" "$NC"
+}
+
+show_community_plugin_details() {
+    local name repo author introduction highlights usage safety="" documents="" copyright_info=""
+    local preset_author="" community=""
+    case "$1" in
+        JS-Slash-Runner)
+            name="酒馆助手"
+            repo="https://github.com/N0VI028/JS-Slash-Runner"
+            author="KAKAA、青空莉想做舞台少女的狗"
+            introduction=$'为 SillyTavern 提供前端界面渲染与脚本运行能力，\n让角色卡、聊天消息和外部应用能够与酒馆交互。'
+            highlights=$'· 界面渲染：展示 HTML、CSS 和 JavaScript 交互界面。\n· 脚本系统：运行全局或角色脚本，响应酒馆事件。\n· 数据交互：管理变量、世界书、消息和预设。\n· 功能联动：控制生成、播放音频或连接外部应用。'
+            usage=$'· 当前上游要求 SillyTavern 1.13.0 或更新版本。\n· 安装后刷新页面，按角色卡说明配置脚本与渲染。'
+            safety=$'· 自定义脚本可读取 API 密钥、聊天记录和设置。\n· 仅导入来源可信、功能明确的脚本与前端内容。'
+            documents="https://n0vi028.github.io/JS-Slash-Runner-Doc/"
+            copyright_info=$'© 2026 N0VI028\n许可协议：PolyForm Noncommercial 1.0.0\n完整条款：仓库 LICENSE 文件。'
+            ;;
+        st-memory-enhancement)
+            name="记忆表格"
+            repo="https://github.com/muyoou/st-memory-enhancement"
+            author="木悠"
+            preset_author="LSR（配套表格预设）"
+            introduction=$'以可编辑表格保存人物、事件与物品等长期记忆，\n通过提示词注入和表格展示辅助长篇对话。'
+            highlights=$'· 结构化记录：按模板整理角色、事件和物品信息。\n· 模板管理：保存不同作用域的模板，导入导出配置。\n· 提示词注入：配合深度注入、全局宏和世界书。\n· 表格展示：在聊天中查看数据，按需编辑展示样式。'
+            usage=$'· 仅适用于聊天补全模式；安装后选择表格模板。\n· 使用 LSR 配套预设时，按其说明配置提示词模板、\n  世界书与正则；这些配置不是插件的通用依赖。\n· 导入前备份；聊天中替换模板时确认数据处理方式。\n· 定期检查填表结果；LSR 预设的大总结需手动触发。'
+            documents=$'使用教程：https://muyoo.com.cn/memory/doc/start\n问题自查：https://muyoo.com.cn/memory/doc/installFaq'
+            community="官方 README 公布的 QQ 群：1030109849"
+            copyright_info=""
+            ;;
+        SillyTavern-CustomModels)
+            name="自定义模型"
+            repo="https://github.com/LenAnderson/SillyTavern-CustomModels"
+            author="LenAnderson"
+            introduction=$'为 SillyTavern 已有的模型连接补充自定义模型名称，\n便于选择服务商实际提供、但未列入默认列表的模型。'
+            highlights=$'· 连接支持：适用于 OpenAI、Claude 和 Google/Gemini。\n· 名称补充：在扩展设置中添加需要的模型名称。'
+            usage=$'· 先配置可用接口，再填写服务商提供的准确模型名。\n· 插件只补充名称；模型权限与可用性由接口服务决定。'
+            documents="https://github.com/LenAnderson/SillyTavern-CustomModels/blob/master/README.md"
+            copyright_info=""
+            ;;
+        LittleWhiteBox)
+            name="小白X"
+            repo="https://github.com/RT15548/LittleWhiteBox"
+            author="biex"
+            introduction=$'整合剧情记忆、交互渲染与多媒体工具，\n为 SillyTavern 角色扮演提供可按需启用的功能模块。'
+            highlights=$'· 渲染交互：支持代码块、流式模板与音频播放。\n· 剧情管理：生成总结，管理变量、状态和循环任务。\n· 多媒体工具：对接 NovelAI 绘图与 TTS 语音服务。\n· 应用面板：通过小白 OS 使用地图、通讯等功能。\n· 消息检查：查看发送给 AI 的内容，按需拦截请求。'
+            usage=$'· 刷新页面后，在「扩展设置 → 小白X」启用所需模块。\n· 绘图、语音等功能需另行配置对应服务与凭据。'
+            safety=$'· 渲染内容可执行脚本；仅启用可信模板和代码。\n· 对接外部服务前，确认发送内容与 API 使用范围。'
+            documents="https://docs.littlewhitebox.qzz.io/"
+            copyright_info=$'© 2025 biex\n许可协议：Apache License 2.0，含自定义署名要求。\n完整条款：docs/LICENSE.md、docs/COPYRIGHT、docs/NOTICE。'
+            ;;
+        ST-BaiBai-Book)
+            name="柏宝书"
+            repo="https://github.com/baibai-git/ST-BaiBai-Book"
+            author="柏柏"
+            introduction=$'通过剧情摘要、分层总结与记忆召回，\n整理长篇对话中的人物、物品、场景和时间线。'
+            highlights=$'· 自动摘要：逐楼记录剧情，合并为多层总结。\n· 剧情台账：跟踪人物、物品、地点、计划与悬念。\n· 时间管理：记录故事内时间，梳理事件先后关系。\n· 向量召回：按需检索相关历史，补充当前上下文。\n· 记忆延续：携带数据新建对话，导入旧总结或 Horae 数据。'
+            usage=$'· 需要 SillyTavern 1.12.13 或更新版本。\n· 安装后打开「柏宝书 · 记忆引擎」总开关。\n· 摘要可跟随主 API，也可单独配置副 API。\n· 向量记忆为可选功能；使用前配置服务并评估耗时。\n· 记忆数据跟随聊天保存，删除聊天前请先备份。'
+            documents="https://github.com/baibai-git/ST-BaiBai-Book/blob/main/README.md"
+            copyright_info=""
+            ;;
+        ST-Prompt-Template)
+            name="提示词模板"
+            repo="https://github.com/zonde306/ST-Prompt-Template"
+            author="zonde306"
+            introduction=$'使用 EJS 模板扩展酒馆宏，\n让提示词、角色卡、世界书和消息随对话状态动态变化。'
+            highlights=$'· 动态语法：使用变量、条件、循环与 JavaScript。\n· 双阶段处理：生成前处理提示词，接收后处理回复。\n· 变量作用域：管理全局、聊天和消息级状态。\n· 注入控制：按指定位置插入内容，兼容酒馆原有宏。'
+            usage=$'· 在扩展设置中启用插件，再使用兼容 EJS 的模板。\n· 模板语句可能在生成与渲染时执行，需按文档配置。\n· 修改预设、世界书或变量初始化内容前请先备份。'
+            safety=$'· EJS 模板能够执行 JavaScript，并读写酒馆数据。\n· 仅使用可信模板，检查 AI 输出中的可执行语句。'
+            documents="https://github.com/zonde306/ST-Prompt-Template/blob/main/docs/features_cn.md"
+            copyright_info=$'许可协议：GNU AGPL-3.0\n完整条款：仓库 LICENSE 文件。'
+            ;;
+        shujuku)
+            name="龙血玄黄·数据库"
+            repo="https://github.com/AlbusKen/shujuku"
+            author="Albus"
+            introduction=$'以结构化表格和剧情纪要整理长期记忆，\n结合世界书同步与按需召回，为后续对话提供参考。'
+            highlights=$'· 剧情数据：记录时间、地点、人物、物品、技能和任务。\n· 自动更新：按对话更新表格与纪要，也可手动同步。\n· 世界书联动：同步表格内容与索引，配置关键词注入。\n· 记忆召回：按需配置剧情纪要的向量检索。\n· 模板编辑：使用默认表格，或调整模板与生成配置。'
+            usage=$'· 当前入口安装插件版；不要同时运行同一脚本版。\n· 插件模式可独立运行，酒馆助手为可选依赖。\n· 使用酒馆预设 API 生成需酒馆助手；也可用自定义 API。\n· 向量检索需另配相关接口；迁移前备份聊天和世界书。'
+            copyright_info=""
+            ;;
+        *) return 1 ;;
+    esac
+    clear
+    printf '%b====== %s ======%b\n\n' "$CYAN$BOLD" "$name" "$NC"
+    plugin_detail_section "仓库地址" "$repo" "$CYAN$BOLD" '\033[0;94m'
+    plugin_detail_section "插件简介" "$introduction"
+    plugin_detail_section "核心亮点" "$highlights"
+    plugin_detail_section "使用须知" "$usage"
+    plugin_detail_section "安全提示" "$safety" "$YELLOW$BOLD"
+    plugin_detail_section "参考文档" "$documents" "$CYAN$BOLD" '\033[0;94m'
+    plugin_detail_section "交流反馈" "$community"
+    printf '%b插件名称：%b%s\n' "$CYAN$BOLD" "$NC" "$name"
+    printf '%b开发作者：%b%s\n' "$CYAN$BOLD" "$NC" "$author"
+    [ -z "$preset_author" ] || printf '%b预设作者：%b%s\n' "$CYAN$BOLD" "$NC" "$preset_author"
+    printf '\n'
+    plugin_detail_section "版权与许可" "$copyright_info"
+}
+
 install_community_plugin() {
-    local name="$1" repo="$2" folder="$3" authors="$4" copyright_owner="$5"
-    local description="$6" notes="$7" ans temporary_dir
+    local name="$1" repo="$2" folder="$3" ans temporary_dir
     local plugin_root="$HOME/SillyTavern/public/scripts/extensions/third-party"
     local plugin_dir="$plugin_root/$folder"
-    clear
-    echo -e "${CYAN}${BOLD}====== ${name} ======${NC}\n"
-    echo -e "${YELLOW}${BOLD}仓库地址：${NC}\n${repo}\n"
-    echo -e "${CYAN}${BOLD}插件简介：${NC}"
-    echo -e "${WHITE}${description}${NC}\n"
-    echo -e "${YELLOW}${BOLD}使用须知：${NC}"
-    echo -e "${WHITE}${notes}${NC}\n"
-    echo -e "${CYAN}${BOLD}插件名称：${name}${NC}"
-    echo -e "${GREEN}${BOLD}开发作者：${authors}${NC}"
-    echo -e "${MAGENTA}${BOLD}© 2026 ${copyright_owner}. All rights reserved.${NC}\n"
+    show_community_plugin_details "$folder" || return 1
     echo -ne "${YELLOW}${BOLD}是否安装${name}？(y/n)：${NC}"
     read -n1 -r ans || return; echo
     if [[ ! "$ans" =~ ^[yY]$ ]]; then
@@ -1309,39 +1411,20 @@ plugin_install_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（多功能扩展）${NC}"
-        echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化记忆）${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 自定义模型    ${CYAN}${BOLD}（扩展模型名称）${NC}"
-        echo -e "${CYAN}${BOLD}4. 小白X         ${GREEN}${BOLD}（剧情与状态管理）${NC}"
-        echo -e "${BRIGHT_BLUE}${BOLD}5. 柏宝书        ${GREEN}${BOLD}（长期记忆引擎）${NC}"
-        echo -e "${BRIGHT_MAGENTA}${BOLD}6. 提示词模板    ${CYAN}${BOLD}（动态 EJS 模板）${NC}"
-        echo -e "${GREEN}${BOLD}7. 龙血玄黄·数据库 ${CYAN}${BOLD}（剧情数据与世界书）${NC}"
+        printf '%b1. 酒馆助手%b（脚本与交互界面）\n' "$GREEN$BOLD" "$NC"
+        printf '%b2. 记忆表格%b（结构化长期记忆）\n' "$GREEN$BOLD" "$NC"
+        printf '%b3. 自定义模型%b（补充模型名称）\n' "$GREEN$BOLD" "$NC"
+        printf '%b4. 小白X%b（剧情与互动工具）\n' "$GREEN$BOLD" "$NC"
+        printf '%b5. 柏宝书%b（摘要与记忆召回）\n' "$GREEN$BOLD" "$NC"
+        printf '%b6. 提示词模板%b（EJS 动态提示词）\n' "$GREEN$BOLD" "$NC"
+        printf '%b7. 龙血玄黄·数据库%b（剧情数据与世界书）\n' "$GREEN$BOLD" "$NC"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
         read -n1 -r plugin_choice || break; echo
         case "$plugin_choice" in
             0) break ;;
             1)
-                clear
-                echo -e "${GREEN}${BOLD}====== 酒馆助手 ======${NC}\n"
-                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/N0VI028/JS-Slash-Runner\n"
-                echo -e "${CYAN}${BOLD}插件简介：${NC}"
-                echo -e "${GREEN}· 酒馆助手是一款专为 SillyTavern 打造的多功能扩展插件，带来前所未有的交互体验"
-                echo -e "· 支持对话中渲染多样交互元素，从简单按钮到自定义游戏界面应有尽有"
-                echo -e "· 可使用 jQuery 操作 SillyTavern DOM，自由修改样式与事件绑定"
-                echo -e "· 作为后端中转，轻松联动外部应用，实现数据交换与能力扩展${NC}\n"
-                echo -e "${BLUE}${BOLD}核心亮点：${NC}"
-                echo -e "${WHITE}- 灵活丰富的前端交互，极大提升对话玩法"
-                echo -e "- 连接外部世界，让 SillyTavern 变得更强大"
-                echo -e "- 支持通过 iframe 隔离安全运行自定义 JS 脚本${NC}\n"
-                echo -e "${YELLOW}${BOLD}安全提示：${NC}"
-                echo -e "${WHITE}· 插件支持执行自定义 JavaScript 脚本，存在一定安全风险。"
-                echo -e "· 恶意脚本可能窃取 API 密钥、聊天记录，或篡改设置。"
-                echo -e "· 请仅运行来源可信、内容可控的脚本，务必理解其功能和影响。"
-                echo -e "· 因第三方脚本带来的任何损失，插件及作者概不负责。${NC}\n"
-                echo -e "${CYAN}${BOLD}插件名称：酒馆助手${NC}"
-                echo -e "${GREEN}${BOLD}开发作者：KAKAA、青空莉想做舞台少女的狗${NC}"
-                echo -e "${MAGENTA}${BOLD}© 2026 N0VI028. All rights reserved.${NC}\n"
+                show_community_plugin_details "JS-Slash-Runner" || return 1
                 echo -ne "${YELLOW}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
                 IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
@@ -1357,27 +1440,7 @@ plugin_install_menu() {
                 fi
                 ;;
             2)
-                clear
-                echo -e "${BLUE}${BOLD}====== 记忆表格 ======${NC}\n"
-                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/muyoou/st-memory-enhancement\n"
-                echo -e "${CYAN}${BOLD}插件简介：${NC}"
-                echo -e "${WHITE}✨ 记忆表格插件为 SillyTavern 注入强大的结构化长期记忆，助您在角色扮演场景中，实现更真实与连贯的 AI 推演。"
-                echo -e "支持对角色设定、关键事件、重要物品等内容的自定义管理，显著提升记忆和情境还原。${NC}\n"
-                echo -e "${BLUE}${BOLD}核心优势：${NC}"
-                echo -e "${GREEN}😊 用户友好：通过直观表格轻松查看与编辑，全面掌控角色记忆"
-                echo -e "🛠️ 创作者友好：灵活导出/分享配置，JSON 文件自定义结构，满足多样创作"
-                echo -e "📅 结构化存储：强大表格系统，未来支持节点编辑器和多模板管理"
-                echo -e "🤖 智能提示词：自动生成并注入提示词，深度集成世界书或预设"
-                echo -e "🖼️ 数据推送：表格内容可推送至聊天界面，支持自定义展示样式"
-                echo -e "📦 便捷导出：丰富自定义选项，支持模板导出与分享"
-                echo -e "🚀 分步操作：结合主副 API，智能分配任务，高效管理长期记忆${NC}\n"
-                echo -e "${YELLOW}${BOLD}使用须知：${NC}"
-                echo -e "${WHITE}· 插件仅适用于 SillyTavern 的“聊天补全模式”"
-                echo -e "· 插件界面简洁直观，上手快速，适合所有用户${NC}\n"
-                echo -e "${CYAN}${BOLD}插件名称：记忆表格${NC}"
-                echo -e "${GREEN}${BOLD}开发作者：木悠、LSR${NC}"
-                echo -e "${YELLOW}${BOLD}插件交流群：1030109849 / 1045423946${NC}"
-                echo -e "${MAGENTA}${BOLD}© 2026 muyoou、lesser. All rights reserved.${NC}\n"
+                show_community_plugin_details "st-memory-enhancement" || return 1
                 echo -ne "${YELLOW}${BOLD}是否安装记忆表格？(y/n)：${NC}"
                 IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
@@ -1393,18 +1456,7 @@ plugin_install_menu() {
                 fi
                 ;;
             3)
-                clear
-                echo -e "${MAGENTA}${BOLD}====== 自定义模型 ======${NC}\n"
-                echo -e "${YELLOW}${BOLD}仓库地址：${NC}\nhttps://github.com/LenAnderson/SillyTavern-CustomModels\n"
-                echo -e "${CYAN}${BOLD}插件简介：${NC}"
-                echo -e "${WHITE}自定义模型插件可为 SillyTavern 的 OpenAI、Claude 及 Google/Gemini 连接添加自定义模型名称，让您轻松扩展与管理各类模型，对话体验更加灵活丰富。${NC}\n"
-                echo -e "${BLUE}${BOLD}主要特性：${NC}"
-                echo -e "${GREEN}· 支持用户自定义添加和切换模型名称"
-                echo -e "· 兼容 OpenAI、Claude、Google/Gemini 多种对接方式"
-                echo -e "· 简化模型管理，满足多样需求，自由扩展 AI 能力${NC}\n"
-                echo -e "${CYAN}${BOLD}插件名称：自定义模型${NC}"
-                echo -e "${GREEN}${BOLD}开发作者：LenAnderson${NC}"
-                echo -e "${MAGENTA}${BOLD}© 2026 LenAnderson. All rights reserved.${NC}\n"
+                show_community_plugin_details "SillyTavern-CustomModels" || return 1
                 echo -ne "${YELLOW}${BOLD}是否安装自定义模型？(y/n)：${NC}"
                 IFS= read -r -n1 ans || return 0; echo
                 if [[ "$ans" =~ [yY] ]]; then
@@ -1420,28 +1472,16 @@ plugin_install_menu() {
                 fi
                 ;;
             4)
-                install_community_plugin "小白X" "https://github.com/RT15548/LittleWhiteBox" "LittleWhiteBox" \
-                    "biex" "biex" \
-                    "小白X为长篇角色扮演提供剧情记忆、状态管理、绘图、语音与应用面板，方便您集中管理各项扩展功能。" \
-                    "安装后请在酒馆扩展设置中按需配置各项功能。"
+                install_community_plugin "小白X" "https://github.com/RT15548/LittleWhiteBox" "LittleWhiteBox"
                 ;;
             5)
-                install_community_plugin "柏宝书" "https://github.com/baibai-git/ST-BaiBai-Book" "ST-BaiBai-Book" \
-                    "柏柏" "BaiBai" \
-                    "柏宝书是面向 SillyTavern 的长期记忆引擎，支持剧情摘要、人物与物品记录、时间线管理及向量记忆召回，帮助长篇对话保持连贯。" \
-                    "适用于 SillyTavern 1.12.13 或更新版本。安装后请在设置中打开「柏宝书 · 记忆引擎」，按需配置摘要与向量记忆。"
+                install_community_plugin "柏宝书" "https://github.com/baibai-git/ST-BaiBai-Book" "ST-BaiBai-Book"
                 ;;
             6)
-                install_community_plugin "提示词模板" "https://github.com/zonde306/ST-Prompt-Template" "ST-Prompt-Template" \
-                    "zonde306" "zonde306" \
-                    "提示词模板为提示词、角色卡与世界书提供 EJS 模板语法，支持变量、条件与循环，让提示词随对话状态动态生成。" \
-                    "模板可执行 JavaScript，请仅使用来源可信、内容可控的模板。"
+                install_community_plugin "提示词模板" "https://github.com/zonde306/ST-Prompt-Template" "ST-Prompt-Template"
                 ;;
             7)
-                install_community_plugin "龙血玄黄·数据库" "https://github.com/AlbusKen/shujuku" "shujuku" \
-                    "Albus" "Albus" \
-                    "龙血玄黄·数据库通过剧情数据表管理地点、时间、人物、物品与纪要，支持自动更新、表格模板及世界书导出与记忆注入。" \
-                    "安装后刷新酒馆，进入数据库面板选择模板并配置生成接口。插件模式可独立运行，酒馆助手为可选依赖；使用酒馆预设 API 生成功能需酒馆助手，否则可配置自定义 API。请勿同时运行同一数据库的脚本版与插件版。"
+                install_community_plugin "龙血玄黄·数据库" "https://github.com/AlbusKen/shujuku" "shujuku"
                 ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
@@ -1475,7 +1515,7 @@ plugin_uninstall_menu() {
         for i in "${!plugin_dirs[@]}"; do
             raw_name=$(basename "${plugin_dirs[$i]}")
             zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
-            echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${zh_name}${NC}"
+            printf '%b%s. %s%b\n' "$GREEN$BOLD" "$((i+1))" "$zh_name" "$NC"
         done
         echo -e "${CYAN}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
         IFS= read -r idx || return 0

@@ -6,7 +6,7 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/print-yuhuan/SillyTavern-Termux.svg?style=for-the-badge&logo=github)](https://github.com/print-yuhuan/SillyTavern-Termux)
 [![License](https://img.shields.io/badge/License-Custom%20NC-blue.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/Version-2026.10.15-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
+[![Version](https://img.shields.io/badge/Version-2026.10.16-brightgreen.svg?style=for-the-badge)](https://github.com/print-yuhuan/SillyTavern-Termux/blob/main/Menu.sh)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20(Android)-orange.svg?style=for-the-badge&logo=android)](https://termux.dev/cn/index.html)
 [![QQ一群](https://img.shields.io/badge/QQ一群-807134015-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/Z1kk7tCrcG)
 [![QQ二群](https://img.shields.io/badge/QQ二群-1039656113-blue?style=for-the-badge&logo=tencentqq)](https://qm.qq.com/q/jgakXZz3Xi)
@@ -36,7 +36,12 @@
 
 ## 🆕 最近更新
 
-> 当前版本 **v2026.10.15**，修复代码审查发现的 9 项配置、维护与输入边界问题。
+> 当前版本 **v2026.10.16**，依据插件仓库文档与参考资料，补全七个插件的说明并统一展示格式。
+
+- 🧩 **插件说明**：统一简介、核心亮点、使用须知与参考文档，按实际功能补充安全提示
+- ✍️ **格式与署名**：统一标题、正文、颜色、符号和换行；区分插件作者与配套预设作者，版权和许可保留上游实际声明
+
+**v2026.10.15 更新内容：**
 
 - 🧩 **新增插件**：新增 [龙血玄黄·数据库](https://github.com/AlbusKen/shujuku)，开发作者 Albus，支持安装与卸载
 - 🛡️ **监听与认证**：使用 YAML 解析、校验和原子替换修改配置；关闭监听保留账户认证，修改后重启酒馆生效
@@ -240,16 +245,20 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 ### 🧩 可用插件列表
 
 | 插件名称 | 开发者 | 功能简介 | 使用须知 |
-|:--------|:------|:--------|:-------:|
-| [**酒馆助手**](https://github.com/N0VI028/JS-Slash-Runner) | KAKAA、青空莉想做舞台少女的狗 | 多功能扩展，支持渲染交互元素、jQuery DOM 操作、联动外部应用 | 仅运行来源可信的脚本 |
-| [**记忆表格**](https://github.com/muyoou/st-memory-enhancement) | 木悠、LSR | 结构化长期记忆管理，支持角色设定、事件、物品等自定义表格 | 适用于聊天补全模式 |
-| [**自定义模型**](https://github.com/LenAnderson/SillyTavern-CustomModels) | LenAnderson | 为 OpenAI、Claude、Gemini 连接添加自定义模型名称 | 按需添加模型名称 |
-| [**小白X**](https://github.com/RT15548/LittleWhiteBox) | biex | 剧情记忆、状态管理、绘图、语音与应用面板 | 安装后按需配置各项功能 |
-| [**柏宝书**](https://github.com/baibai-git/ST-BaiBai-Book) | 柏柏 | 剧情摘要、人物与物品记录、时间线管理、向量记忆召回 | SillyTavern 1.12.13+，安装后启用记忆引擎 |
-| [**提示词模板**](https://github.com/zonde306/ST-Prompt-Template) | zonde306 | 为提示词、角色卡与世界书提供 EJS 模板、变量、条件和循环 | 仅使用来源可信的模板 |
-| [**龙血玄黄·数据库**](https://github.com/AlbusKen/shujuku) | Albus | 剧情数据表、纪要、自动更新与世界书导出及记忆注入 | 插件模式可独立运行；酒馆助手为可选依赖，预设 API 生成功能需要它；避免同时运行脚本版与插件版 |
+|:--------|:------|:--------|:--------|
+| [**酒馆助手**](https://github.com/N0VI028/JS-Slash-Runner) | KAKAA、青空莉想做舞台少女的狗 | 渲染交互界面，运行脚本，操作变量、世界书与消息 | 当前上游要求 SillyTavern 1.13.0+；仅导入可信脚本与前端内容 |
+| [**记忆表格**](https://github.com/muyoou/st-memory-enhancement) | 木悠；配套预设作者：LSR | 编辑结构化记忆表格，管理模板，配置提示词注入与数据展示 | 仅适用于聊天补全模式；使用 LSR 预设时按其说明配置世界书、正则与提示词模板 |
+| [**自定义模型**](https://github.com/LenAnderson/SillyTavern-CustomModels) | LenAnderson | 为 OpenAI、Claude 和 Google/Gemini 连接补充模型名称 | 需填写服务商支持的准确模型名，模型权限与可用性由接口服务决定 |
+| [**小白X**](https://github.com/RT15548/LittleWhiteBox) | biex | 整合交互渲染、剧情总结、变量、绘图、语音与小白 OS | 按需启用模块；外部服务需单独配置，模板与代码应来自可信来源 |
+| [**柏宝书**](https://github.com/baibai-git/ST-BaiBai-Book) | 柏柏 | 自动摘要、分层总结、剧情台账、时间线与可选向量召回 | 需要 SillyTavern 1.12.13+；打开记忆引擎总开关，摘要可跟随主 API |
+| [**提示词模板**](https://github.com/zonde306/ST-Prompt-Template) | zonde306 | 使用 EJS 动态处理提示词与回复，管理分层变量和内容注入 | 在扩展设置中启用；模板可执行 JavaScript，仅使用可信内容 |
+| [**龙血玄黄·数据库**](https://github.com/AlbusKen/shujuku) | Albus | 管理剧情数据表与纪要，自动更新、世界书同步与按需记忆召回 | 当前安装插件版；酒馆助手为可选依赖，酒馆预设 API 生成功能需要它；避免与同一脚本版同时运行 |
 
-> ⚠️ **安全提示**：酒馆助手与提示词模板支持执行 JavaScript，请仅运行来源可信、内容可控的脚本或模板。
+安装后刷新酒馆页面，再按插件说明启用和配置。详情页提供功能、依赖与相关文档；记忆表格的 LSR 配套方案、数据库的脚本版说明均已标明适用范围。
+
+> **安全提示**：酒馆助手、小白X 的代码渲染及提示词模板能够执行脚本，只应加载可信内容。向外部模型、绘图或语音服务发送数据前，请确认服务配置与发送范围。
+
+文案格式、作者署名、版权与许可来源见 [插件说明规范与资料来源](./docs/plugin-content.md)。
 
 ### 💾 备份与恢复
 
