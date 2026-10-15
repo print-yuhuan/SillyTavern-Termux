@@ -38,6 +38,7 @@
 
 > 当前版本 **v2026.10.15**，修复代码审查发现的 9 项配置、维护与输入边界问题。
 
+- 🧩 **新增插件**：新增 [龙血玄黄·数据库](https://github.com/AlbusKen/shujuku)，开发作者 Albus，支持安装与卸载
 - 🛡️ **监听与认证**：使用 YAML 解析、校验和原子替换修改配置；关闭监听保留账户认证，修改后重启酒馆生效
 - 🔒 **维护互斥**：恢复、更新、依赖修复、版本切换和卸载与启动共用系统锁，请先停止运行中的酒馆再维护
 - 🔧 **版本与内存**：切换前检查目标版本的 Node.js 要求；内存限制独立保存，自动迁移旧设置，更新后继续生效
@@ -105,7 +106,7 @@
 
 - 📦 **应用一键安装**：内置 [Discord 348.10 - Stable](https://github.com/print-yuhuan/SillyTavern-Termux/releases/tag/Discord_348.10-Stable) 下载器（arm64-v8a，Android 7.0+），下载后自动调用系统安装器（termux-open，兼容新版 Android）
 - 🎯 **社群直达**：7 个 Discord 社群（酒馆频道、类脑频道、旅程频道、棱镜频道、尾巴镇频道、喵喵电波频道、LOFI频道）一键访问
-- 🧩 **插件市场**：集成酒馆助手、记忆表格、自定义模型、小白X、柏宝书、提示词模板，支持安装与卸载
+- 🧩 **插件市场**：集成酒馆助手、记忆表格、自定义模型、小白X、柏宝书、提示词模板、龙血玄黄·数据库，支持安装与卸载
 - 📚 **完善帮助**：详细的局域网配置指南、常见问题解答
 
 ### 🔒 数据安全保障
@@ -246,6 +247,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/SillyTavern-Termux/refs/h
 | [**小白X**](https://github.com/RT15548/LittleWhiteBox) | biex | 剧情记忆、状态管理、绘图、语音与应用面板 | 安装后按需配置各项功能 |
 | [**柏宝书**](https://github.com/baibai-git/ST-BaiBai-Book) | 柏柏 | 剧情摘要、人物与物品记录、时间线管理、向量记忆召回 | SillyTavern 1.12.13+，安装后启用记忆引擎 |
 | [**提示词模板**](https://github.com/zonde306/ST-Prompt-Template) | zonde306 | 为提示词、角色卡与世界书提供 EJS 模板、变量、条件和循环 | 仅使用来源可信的模板 |
+| [**龙血玄黄·数据库**](https://github.com/AlbusKen/shujuku) | Albus | 剧情数据表、纪要、自动更新与世界书导出及记忆注入 | 插件模式可独立运行；酒馆助手为可选依赖，预设 API 生成功能需要它；避免同时运行脚本版与插件版 |
 
 > ⚠️ **安全提示**：酒馆助手与提示词模板支持执行 JavaScript，请仅运行来源可信、内容可控的脚本或模板。
 
@@ -723,7 +725,7 @@ YAML 包未提供时，相应测试会明确跳过；发布前请确保这些测
 - 💖 **[SillyTavern](https://github.com/SillyTavern/SillyTavern)** 项目及其开发团队
 - 💖 **[Termux](https://termux.dev/)** 项目，为安卓提供了强大的 Linux 环境
 - 💖 **[Maple Mono](https://github.com/subframe7536/maple-font)** 项目及开发者 **subframe7536**，为本项目提供终端等宽字体资源
-- 💖 所有社区插件开发者（KAKAA、青空莉想做舞台少女的狗、木悠、LSR、LenAnderson、biex、柏柏、zonde306 等）
+- 💖 所有社区插件开发者（KAKAA、青空莉想做舞台少女的狗、木悠、LSR、LenAnderson、biex、柏柏、zonde306、Albus 等）
 - 💖 为本项目提供反馈和建议的所有用户
 
 ### 支持本项目

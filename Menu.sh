@@ -18,13 +18,14 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101501
+MENU_VERSION=2026101504
 UPDATE_DATE="2026-10-15"
 UPDATE_CONTENT="
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-15
 ===============================================
 
+  ● 新增龙血玄黄·数据库插件，开发作者 Albus
   ● 监听配置使用 YAML 校验和原子替换，关闭监听保留账户认证
   ● 恢复、更新、依赖修复、版本切换和卸载与运行会话共享锁
   ● 切换版本前检查目标 Node.js 要求，失败返回明确状态
@@ -1314,8 +1315,9 @@ plugin_install_menu() {
         echo -e "${CYAN}${BOLD}4. 小白X         ${GREEN}${BOLD}（剧情与状态管理）${NC}"
         echo -e "${BRIGHT_BLUE}${BOLD}5. 柏宝书        ${GREEN}${BOLD}（长期记忆引擎）${NC}"
         echo -e "${BRIGHT_MAGENTA}${BOLD}6. 提示词模板    ${CYAN}${BOLD}（动态 EJS 模板）${NC}"
+        echo -e "${GREEN}${BOLD}7. 龙血玄黄·数据库 ${CYAN}${BOLD}（剧情数据与世界书）${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-6）：${NC}"
+        echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
         read -n1 -r plugin_choice || break; echo
         case "$plugin_choice" in
             0) break ;;
@@ -1435,6 +1437,12 @@ plugin_install_menu() {
                     "提示词模板为提示词、角色卡与世界书提供 EJS 模板语法，支持变量、条件与循环，让提示词随对话状态动态生成。" \
                     "模板可执行 JavaScript，请仅使用来源可信、内容可控的模板。"
                 ;;
+            7)
+                install_community_plugin "龙血玄黄·数据库" "https://github.com/AlbusKen/shujuku" "shujuku" \
+                    "Albus" "Albus" \
+                    "龙血玄黄·数据库通过剧情数据表管理地点、时间、人物、物品与纪要，支持自动更新、表格模板及世界书导出与记忆注入。" \
+                    "安装后刷新酒馆，进入数据库面板选择模板并配置生成接口。插件模式可独立运行，酒馆助手为可选依赖；使用酒馆预设 API 生成功能需酒馆助手，否则可配置自定义 API。请勿同时运行同一数据库的脚本版与插件版。"
+                ;;
             *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
     done
@@ -1449,6 +1457,7 @@ plugin_uninstall_menu() {
         [LittleWhiteBox]="小白X"
         [ST-BaiBai-Book]="柏宝书"
         [ST-Prompt-Template]="提示词模板"
+        [shujuku]="龙血玄黄·数据库"
     )
     while true; do
         clear

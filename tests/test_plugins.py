@@ -15,6 +15,7 @@ PLUGINS = [
     ("LittleWhiteBox", "小白X", "https://github.com/RT15548/LittleWhiteBox"),
     ("ST-BaiBai-Book", "柏宝书", "https://github.com/baibai-git/ST-BaiBai-Book"),
     ("ST-Prompt-Template", "提示词模板", "https://github.com/zonde306/ST-Prompt-Template"),
+    ("shujuku", "龙血玄黄·数据库", "https://github.com/AlbusKen/shujuku"),
 ]
 
 CLONE_OK = r'''
@@ -43,27 +44,27 @@ class PluginTests(unittest.TestCase):
     def assert_no_temporary_plugins(self):
         self.assertEqual(list(self.plugin_root.glob(".plugin-install.*")), [])
 
-    def test_all_six_choices_install_the_requested_repositories(self):
-        self.run_menu("".join(f"{choice}y" for choice in range(1, 7)) + "0")
+    def test_all_seven_choices_install_the_requested_repositories(self):
+        self.run_menu("".join(f"{choice}y" for choice in range(1, 8)) + "0")
         self.assertEqual((self.home / "clones").read_text().splitlines(), [p[2] for p in PLUGINS])
         for folder, _, _ in PLUGINS:
             self.assertEqual((self.plugin_root / folder / "manifest.json").read_text(), "test plugin\n")
         self.assert_no_temporary_plugins()
 
     def test_cancel_and_eof_do_not_clone_or_create_plugin_directories(self):
-        for stdin in ("4n5n6n0", "4", ""):
+        for stdin in ("4n5n6n7n0", "7", ""):
             with self.subTest(stdin=stdin):
                 self.run_menu(stdin)
                 self.assertFalse((self.home / "clones").exists())
                 self.assertFalse(self.plugin_root.exists())
 
     def test_repeated_install_preserves_existing_plugin_files(self):
-        self.run_menu("4y5y6y0")
+        self.run_menu("4y5y6y7y0")
         for folder, _, _ in PLUGINS[3:]:
             test_safety.put(self.plugin_root / folder / "user.txt", "keep this")
-        result = self.run_menu("4y5y6y0")
-        self.assertEqual(len((self.home / "clones").read_text().splitlines()), 3)
-        self.assertEqual(result.stdout.count("插件已存在，无需重复安装。"), 3)
+        result = self.run_menu("4y5y6y7y0")
+        self.assertEqual(len((self.home / "clones").read_text().splitlines()), 4)
+        self.assertEqual(result.stdout.count("插件已存在，无需重复安装。"), 4)
         for folder, _, _ in PLUGINS[3:]:
             self.assertEqual((self.plugin_root / folder / "user.txt").read_text(), "keep this")
         self.assert_no_temporary_plugins()
@@ -101,6 +102,14 @@ git() {
         self.assertIn("未检测到 SillyTavern 目录，请先安装酒馆。", result.stdout)
         self.assertFalse(self.harness.tavern.exists())
         self.assertFalse((self.home / "clones").exists())
+
+    def test_database_details_distinguish_plugin_and_author(self):
+        result = self.run_menu("7n0")
+        self.assertIn("插件名称：龙血玄黄·数据库", result.stdout)
+        self.assertIn("开发作者：Albus", result.stdout)
+        self.assertIn("https://github.com/AlbusKen/shujuku", result.stdout)
+        self.assertIn("酒馆助手为可选依赖", result.stdout)
+        self.assertNotIn("开发作者：阿不思", result.stdout)
 
     def test_uninstall_names_and_selected_directory_match(self):
         for folder, _, _ in PLUGINS:
