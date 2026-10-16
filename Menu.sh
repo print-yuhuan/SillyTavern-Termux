@@ -18,13 +18,14 @@ NC='\033[0m'
 
 # ==== 版本与远程资源 ====
 # 菜单版本号用于数值比较，发布更新时递增。
-MENU_VERSION=2026101603
+MENU_VERSION=2026101604
 UPDATE_DATE="2026-10-16"
 UPDATE_CONTENT="
 ===============================================
 SillyTavern-Termux 更新日志 2026-10-16
 ===============================================
 
+  ● 插件安装与卸载支持公有及多用户私有目录，按序号选择用户范围
   ● 依据上游文档与参考资料补全七个插件的介绍、亮点和使用须知
   ● 插件菜单与详情页配色严格对照 cc0e75b，保留现有文案与版权格式
   ● 区分插件与配套预设的要求和署名，保留上游许可说明
@@ -1378,37 +1379,128 @@ show_community_plugin_details() {
     plugin_detail_section "许可说明" "$license_info" "$MAGENTA$BOLD" "$MAGENTA$BOLD"
 }
 
+# 空用户名表示公有范围；只接受现有用户，不跟随所选路径中的符号链接。
+plugin_scope_path() {
+    local user="$1" tavern="$HOME/SillyTavern" path
+    local -a paths
+    [[ -d "$tavern" && ! -L "$tavern" ]] || return 1
+    if [ -z "$user" ]; then
+        paths=("$tavern/public" "$tavern/public/scripts" "$tavern/public/scripts/extensions"
+               "$tavern/public/scripts/extensions/third-party")
+    else
+        [[ "$user" != _* && "$user" != .* && "$user" != */* ]] || return 1
+        [[ -d "$tavern/data" && ! -L "$tavern/data" &&
+           -d "$tavern/data/$user" && ! -L "$tavern/data/$user" ]] || return 1
+        paths=("$tavern/data/$user/extensions")
+    fi
+    for path in "${paths[@]}"; do
+        [ ! -L "$path" ] || return 1
+        if [ -e "$path" ] && [ ! -d "$path" ]; then return 1; fi
+    done
+    printf '%s\n' "${paths[-1]}"
+}
+
+# 结果写入调用菜单声明的 local selected_plugin_user。
+select_plugin_scope() {
+    local action="$1" tavern="$HOME/SillyTavern" idx max i user
+    local -a user_dirs
+    if [[ ! -d "$tavern" || -L "$tavern" ]]; then
+        echo -e "${RED}${BOLD}>> 未检测到 SillyTavern 目录，请先安装酒馆。${NC}"
+        press_any_key; return 1
+    fi
+    while true; do
+        user_dirs=()
+        if [[ -d "$tavern/data" && ! -L "$tavern/data" ]]; then
+            mapfile -d '' -t user_dirs < <(
+                find "$tavern/data" -mindepth 1 -maxdepth 1 -type d \
+                    ! -name '_*' ! -name '.*' -print0 | LC_ALL=C sort -z
+            )
+        fi
+        clear
+        printf '%b==== 选择插件%s范围 ====%b\n' "$CYAN$BOLD" "$action" "$NC"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${GREEN}${BOLD}1. 公有目录（所有用户）${NC}"
+        for i in "${!user_dirs[@]}"; do
+            user="${user_dirs[$i]##*/}"
+            printf '%b%s. %b用户：%s%b\n' "$BLUE$BOLD" "$((i+2))" "$GREEN$BOLD" "$user" "$NC"
+        done
+        if [[ -L "$tavern/data" || ( -e "$tavern/data" && ! -d "$tavern/data" ) ]]; then
+            echo -e "${RED}${BOLD}>> 用户数据目录异常，无法列出用户。${NC}"
+        elif [ "${#user_dirs[@]}" -eq 0 ]; then
+            echo -e "${YELLOW}${BOLD}>> 未检测到用户目录，可选择公有目录。${NC}"
+        fi
+        max=$((${#user_dirs[@]}+1))
+        printf '%b请选择范围（0-%s），输入序号后回车：%b' "$CYAN$BOLD" "$max" "$NC"
+        IFS= read -r idx || return 1
+        [ "$idx" != 0 ] || return 1
+        if [[ "$idx" =~ ^[1-9][0-9]*$ && ${#idx} -le ${#max} ]] && (( idx <= max )); then
+            if [ "$idx" = 1 ]; then
+                selected_plugin_user=""
+            else
+                selected_plugin_user="${user_dirs[$((idx-2))]##*/}"
+            fi
+            if plugin_scope_path "$selected_plugin_user" >/dev/null; then return 0; fi
+            echo -e "${RED}${BOLD}>> 所选目录不存在或包含符号链接，请检查后重试。${NC}"
+            press_any_key
+        else
+            echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1
+        fi
+    done
+}
+
 install_community_plugin() {
-    local name="$1" repo="$2" folder="$3" ans temporary_dir
-    local plugin_root="$HOME/SillyTavern/public/scripts/extensions/third-party"
-    local plugin_dir="$plugin_root/$folder"
+    local name="$1" repo="$2" folder="$3" user="${4-}" ans temporary_dir plugin_root plugin_dir path
+    # 范围参数必须显式传入，防止遗漏时意外写入公有目录。
+    [ "$#" -eq 4 ] || return 1
+    [[ -n "$folder" && "$folder" != .* && "$folder" != */* ]] || return 1
     show_community_plugin_details "$folder" || return 1
     echo -ne "${YELLOW}${BOLD}是否安装${name}？(y/n)：${NC}"
-    read -n1 -r ans || return; echo
+    IFS= read -n1 -r ans || return 1; echo
     if [[ ! "$ans" =~ ^[yY]$ ]]; then
         echo -e "${YELLOW}${BOLD}>> 已取消安装。${NC}"
         press_any_key; return
     fi
-    if [ ! -d "$HOME/SillyTavern" ]; then
-        echo -e "${RED}${BOLD}>> 未检测到 SillyTavern 目录，请先安装酒馆。${NC}"
+    plugin_root=$(plugin_scope_path "$user") || {
+        echo -e "${RED}${BOLD}>> 所选目录不存在或包含符号链接，已取消安装。${NC}"
         press_any_key; return 1
-    fi
+    }
+    plugin_dir="$plugin_root/$folder"
     if [ -e "$plugin_dir" ] || [ -L "$plugin_dir" ]; then
         echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
         press_any_key; return
     fi
-    if ! mkdir -p -- "$plugin_root"; then
-        echo -e "${RED}${BOLD}>> 无法创建插件目录，请检查存储空间或目录权限。${NC}"
+    # 私有范围只创建 extensions；公有范围逐级创建，均不补建酒馆或用户。
+    if [ -z "$user" ]; then
+        for path in "$HOME/SillyTavern/public" "$HOME/SillyTavern/public/scripts" \
+                    "$HOME/SillyTavern/public/scripts/extensions" "$plugin_root"; do
+            if [ ! -d "$path" ] && ! mkdir -- "$path"; then
+                echo -e "${RED}${BOLD}>> 无法创建插件目录，请检查存储空间或目录权限。${NC}"
+                press_any_key; return 1
+            fi
+        done
+    elif [ ! -d "$plugin_root" ] && ! mkdir -- "$plugin_root"; then
+        echo -e "${RED}${BOLD}>> 无法创建插件目录，请检查用户目录或目录权限。${NC}"
         press_any_key; return 1
     fi
+    plugin_scope_path "$user" >/dev/null || {
+        echo -e "${RED}${BOLD}>> 所选目录已发生变化，已取消安装。${NC}"
+        press_any_key; return 1
+    }
     temporary_dir=$(mktemp -d "$plugin_root/.plugin-install.XXXXXX") || {
         echo -e "${RED}${BOLD}>> 创建插件临时目录失败，请检查存储空间或目录权限。${NC}"
         press_any_key; return 1
     }
-    if git clone "$repo" "$temporary_dir" && mv -T -- "$temporary_dir" "$plugin_dir"; then
+    if git clone "$repo" "$temporary_dir" &&
+       plugin_scope_path "$user" >/dev/null &&
+       [[ ! -e "$plugin_dir" && ! -L "$plugin_dir" ]] &&
+       mv -nT -- "$temporary_dir" "$plugin_dir" && [ ! -e "$temporary_dir" ]; then
         echo -e "${GREEN}${BOLD}>> 安装成功。${NC}"
     else
-        rm -rf -- "$temporary_dir"
+        if plugin_scope_path "$user" >/dev/null && [ ! -L "$temporary_dir" ]; then
+            rm -rf -- "$temporary_dir"
+        else
+            printf '%b>> 目录已发生变化，临时文件保留于：%s%b\n' "$YELLOW$BOLD" "$temporary_dir" "$NC"
+        fi
         echo -e "${RED}${BOLD}>> 安装失败，请检查网络或目录权限。${NC}"
         press_any_key; return 1
     fi
@@ -1416,90 +1508,45 @@ install_community_plugin() {
 }
 
 plugin_install_menu() {
-    while true; do
-        clear
-        echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（脚本与交互界面）${NC}"
-        echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化长期记忆）${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 自定义模型    ${CYAN}${BOLD}（补充模型名称）${NC}"
-        echo -e "${CYAN}${BOLD}4. 小白X         ${GREEN}${BOLD}（剧情与互动工具）${NC}"
-        echo -e "${BRIGHT_BLUE}${BOLD}5. 柏宝书        ${GREEN}${BOLD}（摘要与记忆召回）${NC}"
-        echo -e "${BRIGHT_MAGENTA}${BOLD}6. 提示词模板    ${CYAN}${BOLD}（EJS 动态提示词）${NC}"
-        echo -e "${GREEN}${BOLD}7. 龙血玄黄·数据库 ${CYAN}${BOLD}（剧情数据与世界书）${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
-        echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
-        read -n1 -r plugin_choice || break; echo
-        case "$plugin_choice" in
-            0) break ;;
-            1)
-                show_community_plugin_details "JS-Slash-Runner" || return 1
-                echo -ne "${YELLOW}${BOLD}是否安装酒馆助手？(y/n)：${NC}"
-                IFS= read -r -n1 ans || return 0; echo
-                if [[ "$ans" =~ [yY] ]]; then
-                    PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/JS-Slash-Runner"
-                    if [ -d "$PLUGIN_DIR" ]; then
-                        echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
-                    else
-                        git clone https://github.com/N0VI028/JS-Slash-Runner "$PLUGIN_DIR" \
-                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
-                            || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
-                    fi
-                    press_any_key
-                fi
-                ;;
-            2)
-                show_community_plugin_details "st-memory-enhancement" || return 1
-                echo -ne "${YELLOW}${BOLD}是否安装记忆表格？(y/n)：${NC}"
-                IFS= read -r -n1 ans || return 0; echo
-                if [[ "$ans" =~ [yY] ]]; then
-                    PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/st-memory-enhancement"
-                    if [ -d "$PLUGIN_DIR" ]; then
-                        echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
-                    else
-                        git clone https://github.com/muyoou/st-memory-enhancement "$PLUGIN_DIR" \
-                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
-                            || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
-                    fi
-                    press_any_key
-                fi
-                ;;
-            3)
-                show_community_plugin_details "SillyTavern-CustomModels" || return 1
-                echo -ne "${YELLOW}${BOLD}是否安装自定义模型？(y/n)：${NC}"
-                IFS= read -r -n1 ans || return 0; echo
-                if [[ "$ans" =~ [yY] ]]; then
-                    PLUGIN_DIR="$HOME/SillyTavern/public/scripts/extensions/third-party/SillyTavern-CustomModels"
-                    if [ -d "$PLUGIN_DIR" ]; then
-                        echo -e "${YELLOW}${BOLD}>> 插件已存在，无需重复安装。${NC}"
-                    else
-                        git clone https://github.com/LenAnderson/SillyTavern-CustomModels "$PLUGIN_DIR" \
-                            && echo -e "${GREEN}${BOLD}>> 安装成功。${NC}" \
-                            || echo -e "${RED}${BOLD}>> 安装失败，请检查网络。${NC}"
-                    fi
-                    press_any_key
-                fi
-                ;;
-            4)
-                install_community_plugin "小白X" "https://github.com/RT15548/LittleWhiteBox" "LittleWhiteBox"
-                ;;
-            5)
-                install_community_plugin "柏宝书" "https://github.com/baibai-git/ST-BaiBai-Book" "ST-BaiBai-Book"
-                ;;
-            6)
-                install_community_plugin "提示词模板" "https://github.com/zonde306/ST-Prompt-Template" "ST-Prompt-Template"
-                ;;
-            7)
-                install_community_plugin "龙血玄黄·数据库" "https://github.com/AlbusKen/shujuku" "shujuku"
-                ;;
-            *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
-        esac
+    local selected_plugin_user scope_label plugin_choice
+    while select_plugin_scope "安装"; do
+        scope_label="公有目录（所有用户）"
+        [ -z "$selected_plugin_user" ] || scope_label="用户：$selected_plugin_user"
+        while true; do
+            clear
+            echo -e "${CYAN}${BOLD}==== 插件安装 ====${NC}"
+            printf '%b当前范围：%s%b\n' "$CYAN$BOLD" "$scope_label" "$NC"
+            echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+            echo -e "${GREEN}${BOLD}1. 酒馆助手      ${YELLOW}${BOLD}（脚本与交互界面）${NC}"
+            echo -e "${BLUE}${BOLD}2. 记忆表格      ${GREEN}${BOLD}（结构化长期记忆）${NC}"
+            echo -e "${MAGENTA}${BOLD}3. 自定义模型    ${CYAN}${BOLD}（补充模型名称）${NC}"
+            echo -e "${CYAN}${BOLD}4. 小白X         ${GREEN}${BOLD}（剧情与互动工具）${NC}"
+            echo -e "${BRIGHT_BLUE}${BOLD}5. 柏宝书        ${GREEN}${BOLD}（摘要与记忆召回）${NC}"
+            echo -e "${BRIGHT_MAGENTA}${BOLD}6. 提示词模板    ${CYAN}${BOLD}（EJS 动态提示词）${NC}"
+            echo -e "${GREEN}${BOLD}7. 龙血玄黄·数据库 ${CYAN}${BOLD}（剧情数据与世界书）${NC}"
+            echo -e "${CYAN}${BOLD}==================${NC}"
+            echo -ne "${CYAN}${BOLD}请选择操作（0-7）：${NC}"
+            IFS= read -n1 -r plugin_choice || return 0; echo
+            case "$plugin_choice" in
+                0) break ;;
+                1) install_community_plugin "酒馆助手" "https://github.com/N0VI028/JS-Slash-Runner" "JS-Slash-Runner" "$selected_plugin_user" ;;
+                2) install_community_plugin "记忆表格" "https://github.com/muyoou/st-memory-enhancement" "st-memory-enhancement" "$selected_plugin_user" ;;
+                3) install_community_plugin "自定义模型" "https://github.com/LenAnderson/SillyTavern-CustomModels" "SillyTavern-CustomModels" "$selected_plugin_user" ;;
+                4) install_community_plugin "小白X" "https://github.com/RT15548/LittleWhiteBox" "LittleWhiteBox" "$selected_plugin_user" ;;
+                5) install_community_plugin "柏宝书" "https://github.com/baibai-git/ST-BaiBai-Book" "ST-BaiBai-Book" "$selected_plugin_user" ;;
+                6) install_community_plugin "提示词模板" "https://github.com/zonde306/ST-Prompt-Template" "ST-Prompt-Template" "$selected_plugin_user" ;;
+                7) install_community_plugin "龙血玄黄·数据库" "https://github.com/AlbusKen/shujuku" "shujuku" "$selected_plugin_user" ;;
+                *) echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
+            esac
+        done
     done
+    return 0
 }
 
-plugin_uninstall_menu() {
-    local PLUGIN_ROOT="$HOME/SillyTavern/public/scripts/extensions/third-party"
-    declare -A plugin_name_map=(
+uninstall_plugins_from_scope() {
+    local user="$1" scope_label="$2" plugin_root idx max i raw_name zh_name selected_dir ans
+    local -a plugin_dirs
+    local -A plugin_name_map=(
         [JS-Slash-Runner]="酒馆助手"
         [st-memory-enhancement]="记忆表格"
         [SillyTavern-CustomModels]="自定义模型"
@@ -1509,45 +1556,67 @@ plugin_uninstall_menu() {
         [shujuku]="龙血玄黄·数据库"
     )
     while true; do
+        plugin_root=$(plugin_scope_path "$user") || {
+            echo -e "${RED}${BOLD}>> 所选目录不存在或包含符号链接，已取消卸载。${NC}"
+            press_any_key; return
+        }
         clear
         echo -e "${CYAN}${BOLD}==== 插件卸载 ====${NC}"
+        printf '%b当前范围：%s%b\n' "$CYAN$BOLD" "$scope_label" "$NC"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        if [ ! -d "$PLUGIN_ROOT" ]; then
+        if [ ! -d "$plugin_root" ]; then
             echo -e "${YELLOW}${BOLD}>> 插件目录不存在，无插件可卸载。${NC}"
-            press_any_key; break
+            press_any_key; return
         fi
-        mapfile -t plugin_dirs < <(find "$PLUGIN_ROOT" -mindepth 1 -maxdepth 1 -type d | sort)
-        if [ ${#plugin_dirs[@]} -eq 0 ]; then
+        mapfile -d '' -t plugin_dirs < <(
+            find "$plugin_root" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print0 | LC_ALL=C sort -z
+        )
+        if [ "${#plugin_dirs[@]}" -eq 0 ]; then
             echo -e "${YELLOW}${BOLD}>> 未检测到已安装插件。${NC}"
-            press_any_key; break
+            press_any_key; return
         fi
         for i in "${!plugin_dirs[@]}"; do
-            raw_name=$(basename "${plugin_dirs[$i]}")
+            raw_name="${plugin_dirs[$i]##*/}"
             zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
-            echo -e "${BLUE}${BOLD}$((i+1)). ${GREEN}${BOLD}${zh_name}${NC}"
+            printf '%b%s. %b%s%b\n' "$BLUE$BOLD" "$((i+1))" "$GREEN$BOLD" "$zh_name" "$NC"
         done
         echo -e "${CYAN}${BOLD}请输入要卸载的插件序号后回车（或0返回）：${NC}"
-        IFS= read -r idx || return 0
-        if [[ "$idx" == "0" ]]; then
-            break
-        fi
-        if [[ "$idx" =~ ^[1-9][0-9]*$ ]] && [ "$idx" -le "${#plugin_dirs[@]}" ]; then
-            raw_name=$(basename "${plugin_dirs[$((idx-1))]}")
+        IFS= read -r idx || return
+        [ "$idx" != 0 ] || return 0
+        max=${#plugin_dirs[@]}
+        if [[ "$idx" =~ ^[1-9][0-9]*$ && ${#idx} -le ${#max} ]] && (( idx <= max )); then
+            selected_dir="${plugin_dirs[$((idx-1))]}"
+            raw_name="${selected_dir##*/}"
             zh_name="${plugin_name_map[$raw_name]:-$raw_name}"
-            echo -ne "${YELLOW}${BOLD}是否卸载 ${zh_name}？(y/n)：${NC}"
-            IFS= read -r -n1 ans || return 0; echo
-            if [[ "$ans" =~ [yY] ]]; then
-                rm -rf "${plugin_dirs[$((idx-1))]}"
-                echo -e "${GREEN}${BOLD}>> 插件 ${zh_name} 已卸载。${NC}"
+            printf '%b是否卸载 %s？(y/n)：%b' "$YELLOW$BOLD" "$zh_name" "$NC"
+            IFS= read -r -n1 ans || return; echo
+            if [[ "$ans" =~ ^[yY]$ ]]; then
+                if ! plugin_scope_path "$user" >/dev/null ||
+                   [[ ! -d "$selected_dir" || -L "$selected_dir" || "${selected_dir%/*}" != "$plugin_root" ]]; then
+                    echo -e "${RED}${BOLD}>> 所选目录已发生变化，已取消卸载。${NC}"
+                elif rm -rf -- "$selected_dir"; then
+                    printf '%b>> 插件 %s 已卸载。%b\n' "$GREEN$BOLD" "$zh_name" "$NC"
+                else
+                    echo -e "${RED}${BOLD}>> 卸载失败，请检查目录权限后重试。${NC}"
+                fi
             else
                 echo -e "${YELLOW}${BOLD}>> 已取消卸载。${NC}"
             fi
             press_any_key
         else
-            echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"
-            sleep 1
+            echo -e "${RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1
         fi
     done
+}
+
+plugin_uninstall_menu() {
+    local selected_plugin_user scope_label
+    while select_plugin_scope "卸载"; do
+        scope_label="公有目录（所有用户）"
+        [ -z "$selected_plugin_user" ] || scope_label="用户：$selected_plugin_user"
+        uninstall_plugins_from_scope "$selected_plugin_user" "$scope_label"
+    done
+    return 0
 }
 
 plugin_menu() {

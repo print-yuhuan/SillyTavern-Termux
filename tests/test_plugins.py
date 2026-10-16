@@ -37,13 +37,20 @@ class PluginTests(unittest.TestCase):
         self.home = self.harness.home
         self.plugin_root = self.harness.tavern / "public/scripts/extensions/third-party"
 
-    def run_menu(self, stdin, setup=CLONE_OK, menu="plugin_install_menu"):
+    def run_menu(self, stdin, setup=CLONE_OK, menu="plugin_install_menu", scope=1):
+        if scope is not None:
+            stdin = f"{scope}\n" + stdin
         result = self.harness.run_bash(setup + "\n" + menu, stdin)
         self.assertEqual(result.returncode, 0, result.stderr)
         return result
 
+    def user_root(self, username):
+        user = self.harness.tavern / "data" / username
+        user.mkdir(exist_ok=True)
+        return user / "extensions"
+
     def assert_no_temporary_plugins(self):
-        self.assertEqual(list(self.plugin_root.glob(".plugin-install.*")), [])
+        self.assertEqual(list(self.harness.tavern.rglob(".plugin-install.*")), [])
 
     def test_all_seven_choices_install_the_requested_repositories(self):
         self.run_menu("".join(f"{choice}y" for choice in range(1, 8)) + "0")
@@ -129,6 +136,193 @@ git() {
             for other in directories:
                 if other.name != folder:
                     self.assertEqual((other / "user.txt").read_text(), "keep until selected")
+
+    def test_all_seven_plugins_can_be_installed_for_a_private_user(self):
+        selected = self.user_root("default-user")
+        self.run_menu("".join(f"{choice}y" for choice in range(1, 8)) + "0", scope=2)
+        self.assertFalse(self.plugin_root.exists())
+        self.assertEqual((self.home / "clones").read_text().splitlines(), [p[2] for p in PLUGINS])
+        for folder, _, _ in PLUGINS:
+            self.assertEqual((selected / folder / "manifest.json").read_text(), "test plugin\n")
+        self.assert_no_temporary_plugins()
+
+    def test_scope_list_filters_system_directories_files_and_symlink_users(self):
+        data = self.harness.tavern / "data"
+        for name in ("_cache", "_css", "_errors", "_storage", "_uploads", "_webpack", ".hidden"):
+            (data / name).mkdir()
+        test_safety.put(data / "not-a-user", "regular file")
+        elsewhere = self.home / "other-user"
+        elsewhere.mkdir()
+        (data / "aaa-linked-user").symlink_to(elsewhere, target_is_directory=True)
+        selected = self.user_root("default-user")
+
+        listing = self.run_menu("0\n", scope=None)
+        self.assertIn("default-user", listing.stdout)
+        for name in ("_cache", "_css", "_errors", "_storage", "_uploads", "_webpack",
+                     ".hidden", "not-a-user", "aaa-linked-user"):
+            self.assertNotIn(name, listing.stdout)
+        self.assertFalse(selected.exists(), "Listing users must not create private extension directories")
+
+        self.run_menu("4y0", scope=2)
+        self.assertTrue((selected / "LittleWhiteBox/manifest.json").is_file())
+        self.assertEqual(list(elsewhere.iterdir()), [])
+
+    def test_scope_numbers_support_multiple_digits_and_stable_username_order(self):
+        roots = {f"user-{index:02}": self.user_root(f"user-{index:02}") for index in range(11, 0, -1)}
+        self.run_menu("4y0", scope=12)
+        for username, root in roots.items():
+            self.assertEqual((root / "LittleWhiteBox/manifest.json").exists(), username == "user-11")
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_uninstall_accepts_multiple_digit_scope_and_plugin_numbers(self):
+        roots = [self.user_root(f"user-{index:02}") for index in range(1, 12)]
+        for index in range(1, 13):
+            test_safety.put(roots[-1] / f"plugin-{index:02}/user.txt", "selected user")
+        result = self.run_menu("9" * 200 + "\n12\ny0\n", setup="",
+                               menu="plugin_uninstall_menu", scope=12)
+        self.assertIn("插件 plugin-12 已卸载。", result.stdout)
+        self.assertFalse((roots[-1] / "plugin-12").exists())
+        for index in range(1, 12):
+            self.assertEqual((roots[-1] / f"plugin-{index:02}/user.txt").read_text(), "selected user")
+        self.assertTrue(all(not root.exists() for root in roots[:-1]))
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_username_spaces_and_non_ascii_characters_are_preserved(self):
+        first = self.user_root("Alice Example")
+        second = self.user_root("用户甲")
+        self.run_menu("7y0", scope=3)
+        self.assertTrue((second / "shujuku/manifest.json").is_file())
+        self.assertFalse(first.exists())
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_invalid_scope_numbers_and_eof_never_select_public_implicitly(self):
+        self.user_root("alice")
+        for menu in ("plugin_install_menu", "plugin_uninstall_menu"):
+            for stdin in ("", "0\n", "99\n", "-1\n01\n0\n", "9" * 200 + "\n0\n"):
+                with self.subTest(menu=menu, stdin=stdin):
+                    self.run_menu(stdin, setup="", menu=menu, scope=None)
+                    self.assertFalse(self.plugin_root.exists())
+                    self.assertFalse((self.home / "clones").exists())
+
+    def test_same_plugin_can_exist_in_public_and_multiple_private_scopes(self):
+        alice = self.user_root("alice")
+        bob = self.user_root("bob")
+        for scope in (1, 2, 3):
+            self.run_menu("4y0", scope=scope)
+        for root in (self.plugin_root, alice, bob):
+            self.assertEqual((root / "LittleWhiteBox/manifest.json").read_text(), "test plugin\n")
+        self.assertEqual(len((self.home / "clones").read_text().splitlines()), 3)
+
+    def test_uninstall_only_lists_and_removes_the_selected_user_plugins(self):
+        alice = self.user_root("alice")
+        bob = self.user_root("bob")
+        for root, marker in ((self.plugin_root, "public"), (alice, "alice"), (bob, "bob")):
+            test_safety.put(root / "LittleWhiteBox/user.txt", marker)
+        test_safety.put(self.plugin_root / "shujuku/user.txt", "public-only")
+        test_safety.put(bob / "JS-Slash-Runner/user.txt", "bob-only")
+        listing = self.run_menu("0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertIn("小白X", listing.stdout)
+        self.assertNotIn("龙血玄黄·数据库", listing.stdout)
+        self.assertNotIn("酒馆助手", listing.stdout)
+
+        result = self.run_menu("1\ny0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertIn("插件 小白X 已卸载。", result.stdout)
+        self.assertFalse((alice / "LittleWhiteBox").exists())
+        for root, marker in ((self.plugin_root, "public"), (bob, "bob")):
+            self.assertEqual((root / "LittleWhiteBox/user.txt").read_text(), marker)
+        self.assertTrue((self.plugin_root / "shujuku/user.txt").is_file())
+        self.assertTrue((bob / "JS-Slash-Runner/user.txt").is_file())
+
+    def test_public_is_option_one_even_when_private_users_exist(self):
+        alice = self.user_root("alice")
+        self.run_menu("7y0", scope=1)
+        self.assertTrue((self.plugin_root / "shujuku/manifest.json").is_file())
+        self.assertFalse(alice.exists())
+        result = self.run_menu("1\ny0\n", setup="", menu="plugin_uninstall_menu", scope=1)
+        self.assertIn("已卸载", result.stdout)
+        self.assertFalse((self.plugin_root / "shujuku").exists())
+
+    def test_empty_private_scope_returns_without_creating_extensions(self):
+        alice = self.user_root("alice")
+        result = self.run_menu("0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertFalse(alice.exists())
+        self.assertNotIn("已卸载", result.stdout)
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_returning_to_scope_list_allows_switching_install_target(self):
+        alice = self.user_root("alice")
+        self.run_menu("1\n4y02\n7y00\n", scope=None)
+        self.assertTrue((self.plugin_root / "LittleWhiteBox/manifest.json").is_file())
+        self.assertTrue((alice / "shujuku/manifest.json").is_file())
+        self.assertFalse((self.plugin_root / "shujuku").exists())
+        self.assertFalse((alice / "LittleWhiteBox").exists())
+
+    def test_private_extensions_symlink_is_rejected_for_install_and_uninstall(self):
+        alice = self.user_root("alice")
+        elsewhere = self.home / "other-extensions"
+        test_safety.put(elsewhere / "LittleWhiteBox/user.txt", "must survive")
+        alice.symlink_to(elsewhere, target_is_directory=True)
+        self.run_menu("4y0", scope=2)
+        result = self.run_menu("1\ny0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertEqual((elsewhere / "LittleWhiteBox/user.txt").read_text(), "must survive")
+        self.assertFalse((self.home / "clones").exists())
+        self.assertNotIn("已卸载", result.stdout)
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_public_extensions_symlink_is_rejected_for_install_and_uninstall(self):
+        elsewhere = self.home / "other-extensions"
+        test_safety.put(elsewhere / "LittleWhiteBox/user.txt", "must survive")
+        self.plugin_root.parent.mkdir(parents=True)
+        self.plugin_root.symlink_to(elsewhere, target_is_directory=True)
+        self.run_menu("4y0")
+        result = self.run_menu("1\ny0\n", setup="", menu="plugin_uninstall_menu")
+        self.assertEqual((elsewhere / "LittleWhiteBox/user.txt").read_text(), "must survive")
+        self.assertFalse((self.home / "clones").exists())
+        self.assertNotIn("已卸载", result.stdout)
+
+    def test_existing_plugin_symlink_never_overwrites_another_user(self):
+        alice = self.user_root("alice")
+        bob = self.user_root("bob")
+        test_safety.put(bob / "LittleWhiteBox/user.txt", "bob")
+        alice.mkdir()
+        (alice / "LittleWhiteBox").symlink_to(bob / "LittleWhiteBox", target_is_directory=True)
+        self.run_menu("4y0", scope=2)
+        self.assertEqual((bob / "LittleWhiteBox/user.txt").read_text(), "bob")
+        self.assertFalse((self.home / "clones").exists())
+
+    def test_uninstall_ignores_staging_directories_and_plugin_symlinks(self):
+        alice = self.user_root("alice")
+        bob = self.user_root("bob")
+        test_safety.put(alice / "LittleWhiteBox/user.txt", "alice")
+        test_safety.put(alice / ".plugin-install.in-progress/download.txt", "partial")
+        test_safety.put(bob / "shujuku/user.txt", "bob")
+        (alice / "000-linked-plugin").symlink_to(bob / "shujuku", target_is_directory=True)
+        listing = self.run_menu("0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertNotIn(".plugin-install.in-progress", listing.stdout)
+        self.assertNotIn("000-linked-plugin", listing.stdout)
+        self.run_menu("1\ny0\n", setup="", menu="plugin_uninstall_menu", scope=2)
+        self.assertFalse((alice / "LittleWhiteBox").exists())
+        self.assertEqual((alice / ".plugin-install.in-progress/download.txt").read_text(), "partial")
+        self.assertEqual((bob / "shujuku/user.txt").read_text(), "bob")
+
+    def test_user_removed_after_selection_is_not_recreated_during_install(self):
+        alice = self.user_root("alice")
+        result = self.run_menu("4y0", CLONE_OK + r'''
+show_community_plugin_details() {
+    rm -rf -- "$TEST_HOME/SillyTavern/data/alice"
+}
+''', scope=2)
+        self.assertFalse(alice.parent.exists())
+        self.assertFalse((self.home / "clones").exists())
+        self.assertNotIn("安装成功。", result.stdout)
+        self.assertFalse(self.plugin_root.exists())
+
+    def test_failed_uninstall_reports_failure_and_preserves_the_plugin(self):
+        test_safety.put(self.plugin_root / "LittleWhiteBox/user.txt", "keep")
+        result = self.run_menu("1\ny0\n", setup="rm() { return 1; }", menu="plugin_uninstall_menu")
+        self.assertEqual((self.plugin_root / "LittleWhiteBox/user.txt").read_text(), "keep")
+        self.assertIn("卸载失败", result.stdout)
+        self.assertNotIn("已卸载", result.stdout)
 
 
 if __name__ == "__main__":
